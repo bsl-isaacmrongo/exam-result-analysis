@@ -1,0 +1,12 @@
+alembic>=1.13
+argon2-cffi>=23.1
+fastapi>=0.110
+google-auth>=2.29
+pandas>=2.0
+psycopg[binary]>=3.1
+pydantic-settings>=2.0
+python-multipart>=0.0.9
+requests>=2.31
+SQLAlchemy>=2.0
+statsmodels>=0.14
+uvicorn[standard]>=0.29

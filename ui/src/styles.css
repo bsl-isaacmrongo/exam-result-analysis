@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Lotus Eden';
+  src: url('/fonts/fonnts.com-Lotus_Eden_Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lotus Eden';
+  src: url('/fonts/fonnts.com-Lotus_Eden_Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lotus Eden';
+  src: url('/fonts/fonnts.com-Lotus_Eden_Bold.otf') format('opentype');
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-display: 'Lotus Eden', ui-serif, Georgia, serif;
+
+  /* Braeburn brand colours: change these to re-theme the app. */
+  --color-brand: #020381; /* primary: navy */
+  --color-brand-dark: #010259; /* primary hover */
+  --color-brand-accent: #0693e3; /* accent: bright blue */
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-slate-950 font-sans antialiased;
+}
