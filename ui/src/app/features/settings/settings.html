@@ -1,0 +1,257 @@
+<div class="mx-auto max-w-5xl">
+  <h1 class="text-2xl font-bold tracking-tight">Settings</h1>
+  <p class="mt-1 text-sm text-slate-600">Manage the schools whose results can be analysed.</p>
+
+  <section class="mt-8 rounded-xl border border-slate-200 bg-white" aria-labelledby="schools-title">
+    <header
+      class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-6 py-5"
+    >
+      <div>
+        <h2 id="schools-title" class="text-base font-semibold">Schools</h2>
+        <p class="mt-0.5 text-sm text-slate-500">
+          Each school appears in the school picker for the curricula it offers.
+        </p>
+      </div>
+      @if (isAdmin() && !formOpen()) {
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-md bg-brand px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+          (click)="openForm()"
+        >
+          <app-icon name="plus" class="size-4" [strokeWidth]="2.25" />
+          Add school
+        </button>
+      }
+    </header>
+
+    @if (added(); as name) {
+      <div
+        class="mx-6 mt-5 flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+        role="status"
+      >
+        <app-icon name="check" class="size-4" [strokeWidth]="2.5" />
+        <span class="flex-1"
+          ><strong>{{ name }}</strong> was added.</span
+        >
+        <button
+          type="button"
+          class="rounded p-0.5 text-emerald-700 hover:bg-emerald-100"
+          aria-label="Dismiss"
+          (click)="added.set(null)"
+        >
+          <app-icon name="close" class="size-4" />
+        </button>
+      </div>
+    }
+
+    @if (formOpen()) {
+      <form
+        class="mx-6 mt-5 rounded-lg border border-slate-200 bg-slate-50/60 p-5"
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+        novalidate
+        aria-labelledby="add-school-title"
+      >
+        <h3 id="add-school-title" class="text-sm font-semibold">Add a school</h3>
+
+        @if (formError(); as message) {
+          <p
+            class="mt-3 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            role="alert"
+          >
+            <app-icon name="warning" class="mt-0.5 size-4" />
+            {{ message }}
+          </p>
+        }
+
+        <div class="mt-4 grid gap-5 sm:grid-cols-[1fr_14rem]">
+          <div>
+            <label for="school-name" class="block text-sm font-medium text-slate-700"
+              >School name</label
+            >
+            <input
+              #nameInput
+              id="school-name"
+              type="text"
+              formControlName="name"
+              autocomplete="off"
+              maxlength="255"
+              placeholder="Braeburn Garden Estate"
+              class="mt-1.5 block w-full rounded-md border bg-white px-3 py-2 text-sm shadow-xs outline-none focus:ring-4"
+              [class]="
+                showError('name')
+                  ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15'
+                  : 'border-slate-300 focus:border-brand focus:ring-brand/15'
+              "
+              [attr.aria-invalid]="showError('name')"
+              aria-describedby="school-name-error"
+              (input)="clearServerError('name')"
+            />
+            <p id="school-name-error" class="mt-1.5 text-xs text-red-600">
+              @if (showError('name')) {
+                {{ serverErrors().name ?? 'Enter the school name.' }}
+              }
+            </p>
+          </div>
+
+          <div>
+            <label for="school-code" class="block text-sm font-medium text-slate-700">Code</label>
+            <input
+              id="school-code"
+              type="text"
+              formControlName="code"
+              autocomplete="off"
+              spellcheck="false"
+              maxlength="20"
+              placeholder="bge"
+              class="mt-1.5 block w-full rounded-md border bg-white px-3 py-2 font-mono text-sm shadow-xs outline-none focus:ring-4"
+              [class]="
+                showError('code')
+                  ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15'
+                  : 'border-slate-300 focus:border-brand focus:ring-brand/15'
+              "
+              [attr.aria-invalid]="showError('code')"
+              aria-describedby="school-code-hint"
+              (input)="normaliseCode()"
+            />
+            <p
+              id="school-code-hint"
+              class="mt-1.5 text-xs"
+              [class]="showError('code') ? 'text-red-600' : 'text-slate-500'"
+            >
+              @if (serverErrors().code; as message) {
+                {{ message }}
+              } @else if (showError('code') && form.controls.code.hasError('required')) {
+                Enter a short code.
+              } @else if (showError('code') && form.controls.code.hasError('reserved')) {
+                "all" is reserved. Choose another code.
+              } @else {
+                Used in dashboard links. Lowercase letters, digits and hyphens, up to 20.
+              }
+            </p>
+          </div>
+        </div>
+
+        <fieldset class="mt-2" formGroupName="curricula" aria-describedby="school-curricula-error">
+          <legend class="text-sm font-medium text-slate-700">Curricula offered</legend>
+          <div class="mt-2 flex flex-wrap gap-2.5">
+            @for (c of curricula; track c.slug) {
+              <label
+                class="flex cursor-pointer items-center gap-2 rounded-md border bg-white px-3 py-2 text-sm transition has-checked:border-brand has-checked:bg-brand/[0.04] has-focus-visible:ring-4 has-focus-visible:ring-brand/15"
+                [class]="showError('curricula') ? 'border-red-300' : 'border-slate-300'"
+              >
+                <input
+                  type="checkbox"
+                  class="size-4 accent-brand"
+                  [formControlName]="c.slug"
+                  (change)="clearServerError('curricula')"
+                />
+                {{ c.name }}
+              </label>
+            }
+          </div>
+          <p id="school-curricula-error" class="mt-1.5 text-xs text-red-600">
+            @if (showError('curricula')) {
+              {{ serverErrors().curricula ?? 'Select at least one curriculum.' }}
+            }
+          </p>
+        </fieldset>
+
+        <div class="mt-3 flex justify-end gap-3">
+          <button
+            type="button"
+            class="rounded-md px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200/60"
+            (click)="cancel()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+            [disabled]="saving()"
+          >
+            @if (saving()) {
+              <app-icon name="spinner" class="size-4 animate-spin" />
+              Saving…
+            } @else {
+              Add school
+            }
+          </button>
+        </div>
+      </form>
+    }
+
+    <div class="px-6 py-5">
+      @if (loading()) {
+        <p class="flex items-center gap-2 py-6 text-sm text-slate-500" role="status">
+          <app-icon name="spinner" class="size-5 animate-spin" />
+          Loading schools…
+        </p>
+      } @else if (loadError()) {
+        <div class="flex items-center gap-3 py-6 text-sm text-slate-700" role="alert">
+          <app-icon name="warning" class="size-5 text-amber-500" />
+          Schools couldn't be loaded.
+          <button type="button" class="font-semibold text-brand hover:underline" (click)="load()">
+            Try again
+          </button>
+        </div>
+      } @else if (schools().length === 0) {
+        <div class="py-8 text-center">
+          <app-icon name="school" class="mx-auto size-7 text-slate-400" />
+          <p class="mt-3 text-sm font-medium text-slate-800">No schools yet</p>
+          <p class="mt-1 text-sm text-slate-500">
+            @if (isAdmin()) {
+              Add the first school to start analysing its results.
+            } @else {
+              Ask an administrator to add one.
+            }
+          </p>
+        </div>
+      } @else {
+        <div class="-mx-6 overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="text-xs text-slate-500">
+              <tr>
+                <th scope="col" class="px-6 py-2 font-medium">School</th>
+                <th scope="col" class="px-6 py-2 font-medium">Code</th>
+                <th scope="col" class="px-6 py-2 font-medium">Curricula</th>
+                <th scope="col" class="px-6 py-2 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (s of schools(); track s.code) {
+                <tr>
+                  <td class="px-6 py-3 font-medium text-slate-900">{{ s.name }}</td>
+                  <td class="px-6 py-3 font-mono text-xs text-slate-600">{{ s.code }}</td>
+                  <td class="px-6 py-3">
+                    <div class="flex flex-wrap gap-1.5">
+                      @for (slug of s.curricula; track slug) {
+                        <span
+                          class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"
+                          >{{ curriculumName(slug) }}</span
+                        >
+                      } @empty {
+                        <span class="text-xs text-slate-400">None</span>
+                      }
+                    </div>
+                  </td>
+                  <td class="px-6 py-3">
+                    @if (s.is_active) {
+                      <span class="text-xs font-medium text-emerald-700">Active</span>
+                    } @else {
+                      <span class="text-xs font-medium text-slate-400">Disabled</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (!isAdmin()) {
+        <p class="mt-4 text-xs text-slate-500">Only administrators can add schools.</p>
+      }
+    </div>
+  </section>
+</div>

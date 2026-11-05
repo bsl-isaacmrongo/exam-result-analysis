@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { authGuard, guestGuard } from './core/auth/auth.guards';
 import { curriculumGuard } from './core/curriculum/curriculum.guard';
+import { pickSchoolGuard, schoolGuard } from './core/school/school.guard';
 
 const comingSoon = (path: string, label: string) => ({
   path,
@@ -35,22 +36,35 @@ export const routes: Routes = [
   {
     path: ':curriculum',
     canActivate: [authGuard, curriculumGuard],
-    loadComponent: () => import('./core/layout/dashboard.layout').then((m) => m.DashboardLayout),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'overview' },
+      { path: '', pathMatch: 'full', canActivate: [pickSchoolGuard], children: [] },
       {
-        path: 'overview',
-        title: 'Overview · Results Analysis',
-        data: { label: 'Overview' },
+        path: ':school',
+        canActivate: [schoolGuard],
         loadComponent: () =>
-          import('./features/dashboard/overview/overview').then((m) => m.Overview),
+          import('./core/layout/dashboard.layout').then((m) => m.DashboardLayout),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'overview' },
+          {
+            path: 'overview',
+            title: 'Overview · Results Analysis',
+            data: { label: 'Overview' },
+            loadComponent: () =>
+              import('./features/dashboard/overview/overview').then((m) => m.Overview),
+          },
+          comingSoon('subjects', 'Subjects'),
+          comingSoon('cohorts', 'Cohorts'),
+          comingSoon('students', 'Student results'),
+          comingSoon('reports', 'Reports'),
+          comingSoon('imports', 'Data imports'),
+          {
+            path: 'settings',
+            title: 'Settings · Results Analysis',
+            data: { label: 'Settings' },
+            loadComponent: () => import('./features/settings/settings').then((m) => m.Settings),
+          },
+        ],
       },
-      comingSoon('subjects', 'Subjects'),
-      comingSoon('cohorts', 'Cohorts'),
-      comingSoon('students', 'Student results'),
-      comingSoon('reports', 'Reports'),
-      comingSoon('imports', 'Data imports'),
-      comingSoon('settings', 'Settings'),
     ],
   },
   { path: '**', redirectTo: 'curricula' },

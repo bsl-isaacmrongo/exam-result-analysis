@@ -1,5 +1,5 @@
 export interface Curriculum {
-  /** URL segment, e.g. `/ib/overview`. */
+  /** URL segment, e.g. `/ib/<school>/overview`. */
   slug: string;
   name: string;
   /** Programmes covered, shown under the name in the dashboard sidebar. */

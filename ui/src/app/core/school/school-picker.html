@@ -1,0 +1,164 @@
+<dialog
+  #dialog
+  class="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-900/50 backdrop:backdrop-blur-[2px]"
+  aria-labelledby="school-picker-title"
+  aria-describedby="school-picker-description"
+  (click)="onDialogClick($event)"
+>
+  <form
+    class="flex max-h-[min(40rem,calc(100dvh-2rem))] flex-col"
+    (submit)="$event.preventDefault(); confirm()"
+  >
+    <header class="flex items-start gap-4 border-b border-slate-200 px-6 pt-6 pb-5">
+      <span
+        class="grid size-11 shrink-0 place-items-center rounded-full bg-brand/[0.08] text-brand"
+        aria-hidden="true"
+      >
+        <app-icon name="school" class="size-5" />
+      </span>
+      <div class="min-w-0 flex-1">
+        <h2 id="school-picker-title" class="text-lg font-semibold">Choose a school</h2>
+        <p id="school-picker-description" class="mt-0.5 text-sm text-slate-600">
+          Whose {{ curriculum()?.name }} results do you want to analyse?
+        </p>
+      </div>
+      <button
+        type="button"
+        class="-mt-1 -mr-2 rounded-md p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <app-icon name="close" class="size-5" />
+      </button>
+    </header>
+
+    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+      @if (loading()) {
+        <p
+          class="flex items-center justify-center gap-2 py-10 text-sm text-slate-500"
+          role="status"
+        >
+          <app-icon name="spinner" class="size-5 animate-spin" />
+          Loading schools…
+        </p>
+      } @else if (error()) {
+        <div class="py-8 text-center" role="alert">
+          <app-icon name="warning" class="mx-auto size-7 text-amber-500" />
+          <p class="mt-3 text-sm text-slate-700">Schools couldn't be loaded.</p>
+          <button
+            type="button"
+            class="mt-4 rounded-md border border-slate-300 px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            (click)="load()"
+          >
+            Try again
+          </button>
+        </div>
+      } @else if (schools().length === 0) {
+        <div class="py-8 text-center">
+          <app-icon name="school" class="mx-auto size-7 text-slate-400" />
+          <p class="mt-3 text-sm font-medium text-slate-800">
+            No schools offer {{ curriculum()?.name }} yet
+          </p>
+          <p class="mt-1 text-sm text-slate-500">Ask an administrator to add one.</p>
+        </div>
+      } @else {
+        <fieldset>
+          <legend class="sr-only">School</legend>
+          <ul class="space-y-2.5">
+            <li>
+              <ng-container
+                *ngTemplateOutlet="
+                  option;
+                  context: {
+                    code: allSchools,
+                    icon: 'all-schools',
+                    title: 'All schools',
+                    subtitle:
+                      'Combined results across ' +
+                      schools().length +
+                      (schools().length === 1 ? ' school' : ' schools'),
+                  }
+                "
+              />
+            </li>
+            @for (s of schools(); track s.code) {
+              <li>
+                <ng-container
+                  *ngTemplateOutlet="
+                    option;
+                    context: {
+                      code: s.code,
+                      icon: 'school',
+                      title: s.name,
+                      subtitle: s.code.toUpperCase(),
+                    }
+                  "
+                />
+              </li>
+            }
+          </ul>
+        </fieldset>
+      }
+    </div>
+
+    <footer class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+      <button
+        type="button"
+        class="rounded-md px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+        (click)="close()"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="!selected() || navigating() || loading() || schools().length === 0"
+      >
+        @if (navigating()) {
+          <app-icon name="spinner" class="size-4 animate-spin" />
+        }
+        Open dashboard
+      </button>
+    </footer>
+  </form>
+</dialog>
+
+<ng-template #option let-code="code" let-icon="icon" let-title="title" let-subtitle="subtitle">
+  <label
+    class="flex cursor-pointer items-center gap-3.5 rounded-xl border px-4 py-3 transition has-focus-visible:ring-4 has-focus-visible:ring-brand/20"
+    [class]="
+      selected() === code
+        ? 'border-brand bg-brand/[0.04]'
+        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+    "
+  >
+    <input
+      type="radio"
+      name="school"
+      class="sr-only"
+      [value]="code"
+      [checked]="selected() === code"
+      (change)="selected.set(code)"
+    />
+    <span
+      class="grid size-9 shrink-0 place-items-center rounded-full"
+      [class]="selected() === code ? 'bg-brand text-white' : 'bg-slate-100 text-slate-600'"
+      aria-hidden="true"
+    >
+      <app-icon [name]="icon" class="size-[1.1rem]" />
+    </span>
+    <span class="min-w-0 flex-1 leading-tight">
+      <span class="block truncate text-sm font-semibold">{{ title }}</span>
+      <span class="mt-0.5 block truncate text-xs text-slate-500">{{ subtitle }}</span>
+    </span>
+    <span
+      class="grid size-5 shrink-0 place-items-center rounded-full border"
+      [class]="selected() === code ? 'border-brand bg-brand text-white' : 'border-slate-300'"
+      aria-hidden="true"
+    >
+      @if (selected() === code) {
+        <app-icon name="check" class="size-3.5" [strokeWidth]="3" />
+      }
+    </span>
+  </label>
+</ng-template>

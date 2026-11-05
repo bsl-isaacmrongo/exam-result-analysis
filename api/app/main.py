@@ -6,6 +6,7 @@ from app.config import settings
 from app.core.middleware import CSRF_HEADER, SecurityMiddleware
 from app.database import engine
 from app.features.auth.router import router as auth_router
+from app.features.schools.router import router as schools_router
 
 app = FastAPI(title="Results analysis API")
 app.add_middleware(SecurityMiddleware)
@@ -19,6 +20,7 @@ app.add_middleware(
     max_age=600,
 )
 app.include_router(auth_router)
+app.include_router(schools_router)
 
 
 @app.get("/health")

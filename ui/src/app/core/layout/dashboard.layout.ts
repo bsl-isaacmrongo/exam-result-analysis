@@ -23,6 +23,9 @@ import { AuthService } from '../auth/auth.service';
 import { injectSignOut } from '../auth/sign-out';
 import { displayName, userInitials } from '../auth/user-display';
 import { findCurriculum } from '../curriculum/curricula';
+import { ALL_SCHOOLS } from '../school/school.models';
+import { SchoolPicker } from '../school/school-picker';
+import { SchoolService } from '../school/school.service';
 import { Icon, IconName } from '../../shared/ui/icon';
 
 interface NavItem {
@@ -51,10 +54,10 @@ const NAV_SECTIONS: readonly { title: string; items: readonly NavItem[] }[] = [
   },
 ];
 
-/** Sidebar + top bar shell for one curriculum's analysis pages (`/:curriculum/...`). */
+/** Sidebar + top bar shell for one curriculum and school's analysis pages (`/:curriculum/:school/...`). */
 @Component({
   selector: 'app-dashboard-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, SchoolPicker],
   templateUrl: './dashboard.layout.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -66,7 +69,9 @@ export class DashboardLayout {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
+  private readonly schoolService = inject(SchoolService);
   private readonly userMenuRef = viewChild<ElementRef<HTMLElement>>('userMenu');
+  private readonly schoolPicker = viewChild.required(SchoolPicker);
 
   protected readonly navSections = NAV_SECTIONS;
   protected readonly sidebarOpen = signal(false);
@@ -77,6 +82,28 @@ export class DashboardLayout {
     this.route.paramMap.pipe(map((params) => findCurriculum(params.get('curriculum')))),
     { initialValue: findCurriculum(this.route.snapshot.paramMap.get('curriculum')) },
   );
+
+  protected readonly schoolCode = toSignal(
+    this.route.paramMap.pipe(map((params) => params.get('school') ?? '')),
+    { initialValue: this.route.snapshot.paramMap.get('school') ?? '' },
+  );
+
+  /** Display info for the current school; the guard has already loaded the list. */
+  protected readonly school = computed(() => {
+    const code = this.schoolCode();
+    const slug = this.curriculum()?.slug;
+    const schools = (slug && this.schoolService.cached(slug)) || [];
+    if (code === ALL_SCHOOLS) {
+      const count = schools.length;
+      return {
+        all: true,
+        name: 'All schools',
+        detail: `${count} ${count === 1 ? 'school' : 'schools'} combined`,
+      };
+    }
+    const school = schools.find((s) => s.code === code);
+    return { all: false, name: school?.name ?? code.toUpperCase(), detail: code.toUpperCase() };
+  });
 
   /** `label` from the deepest active child route, for the breadcrumb. */
   protected readonly pageLabel = toSignal(
@@ -99,6 +126,13 @@ export class DashboardLayout {
         takeUntilDestroyed(),
       )
       .subscribe(() => this.closeOverlays());
+  }
+
+  protected changeSchool(): void {
+    const curriculum = this.curriculum();
+    if (!curriculum) return;
+    this.closeOverlays();
+    this.schoolPicker().open(curriculum, this.schoolCode());
   }
 
   protected closeOverlays(): void {

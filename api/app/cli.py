@@ -5,6 +5,10 @@
     python -m app.cli set-password staff@school.org             # prompts, revokes sessions
     python -m app.cli disable-user staff@school.org             # revokes sessions
     python -m app.cli unlock-user staff@school.org
+
+    python -m app.cli create-school bge --name "Braeburn Garden Estate" --curricula ib,igcse
+    python -m app.cli update-school bge --curricula ib,igcse,a-level   # or --name / --disable / --enable
+    python -m app.cli list-schools
 """
 
 import argparse
@@ -14,7 +18,12 @@ import sys
 from app.core.security import hash_password, validate_password_strength
 from app.core.sessions import revoke_all_sessions
 from app.database import SessionLocal
+from pydantic import ValidationError
+
 from app.features.auth.service import find_user_by_email, normalize_email
+from app.features.schools.schemas import SchoolCreate, SchoolUpdate
+from app.features.schools.service import find_school, list_schools
+from app.models.school import School
 from app.models.user import User
 
 
@@ -46,7 +55,25 @@ def main(argv: list[str] | None = None) -> int:
     for name in ("set-password", "disable-user", "enable-user", "unlock-user"):
         sub.add_parser(name).add_argument("email")
 
+    create_school = sub.add_parser("create-school")
+    create_school.add_argument("code")
+    create_school.add_argument("--name", required=True)
+    create_school.add_argument(
+        "--curricula", default="", help="comma-separated, e.g. ib,igcse"
+    )
+    update_school = sub.add_parser("update-school")
+    update_school.add_argument("code")
+    update_school.add_argument("--name")
+    update_school.add_argument("--curricula", help="comma-separated, replaces the list")
+    state = update_school.add_mutually_exclusive_group()
+    state.add_argument("--disable", action="store_true")
+    state.add_argument("--enable", action="store_true")
+    sub.add_parser("list-schools")
+
     args = parser.parse_args(argv)
+
+    if args.command in ("create-school", "update-school", "list-schools"):
+        return _school_command(args)
 
     with SessionLocal() as db:
         user = find_user_by_email(db, args.email)
@@ -88,6 +115,53 @@ def main(argv: list[str] | None = None) -> int:
             user.locked_until = None
         db.commit()
         print(f"{args.command}: done for {user.email}")
+        return 0
+
+
+def _split(value: str) -> list[str]:
+    return [part for part in (p.strip() for p in value.split(",")) if part]
+
+
+def _school_command(args: argparse.Namespace) -> int:
+    with SessionLocal() as db:
+        if args.command == "list-schools":
+            for school in list_schools(db, include_inactive=True):
+                state = "" if school.is_active else " (disabled)"
+                print(f"{school.code:<20} {school.name}{state}  [{', '.join(school.curricula)}]")
+            return 0
+
+        try:
+            if args.command == "create-school":
+                payload = SchoolCreate(
+                    code=args.code, name=args.name, curricula=_split(args.curricula)
+                )
+                if find_school(db, payload.code) is not None:
+                    print(f"School {payload.code} already exists", file=sys.stderr)
+                    return 1
+                school = School(**payload.model_dump(), is_active=True)
+                db.add(school)
+            else:
+                changes: dict = {}
+                if args.name is not None:
+                    changes["name"] = args.name
+                if args.curricula is not None:
+                    changes["curricula"] = _split(args.curricula)
+                if args.disable or args.enable:
+                    changes["is_active"] = args.enable
+                update = SchoolUpdate(**changes)
+                school = find_school(db, args.code)
+                if school is None:
+                    print(f"No school with code {args.code}", file=sys.stderr)
+                    return 1
+                for field, value in update.model_dump(exclude_unset=True).items():
+                    setattr(school, field, value)
+        except ValidationError as exc:
+            for error in exc.errors():
+                print(f"{'.'.join(map(str, error['loc']))}: {error['msg']}", file=sys.stderr)
+            return 1
+
+        db.commit()
+        print(f"{args.command}: {school.code} - {school.name} [{', '.join(school.curricula)}]")
         return 0
 
 

@@ -108,7 +108,28 @@ python -m app.cli disable-user john@school.org         # also signs out all sess
 
 Passwords must be at least 12 characters.
 
-### Tests
+## Schools
+
+A school has a `code` (lowercase slug used in dashboard URLs such as
+`/ib/bge/overview`; `all` is reserved), a `name`, and the `curricula` it offers
+(a list of `ib`, `igcse`, `a-level`; stored as a PostgreSQL `text[]`). After
+choosing a curriculum, the UI asks which school to analyse.
+
+| Method | Path                  | Who      | Purpose                                             |
+| ------ | --------------------- | -------- | --------------------------------------------------- |
+| GET    | `/api/schools`        | signed in | Active schools by name; `?curriculum=ib` filters, `?include_inactive=true` (admins only) adds disabled ones |
+| POST   | `/api/schools`        | admin    | `{"code", "name", "curricula"}`; 409 if the code exists |
+| PATCH  | `/api/schools/{code}` | admin    | Change `name`, `curricula` or `is_active`           |
+
+Admins can add schools in the UI under **Settings**, or from the CLI:
+
+```sh
+python -m app.cli create-school bge --name "Braeburn Garden Estate" --curricula ib,igcse
+python -m app.cli update-school bge --curricula ib,igcse,a-level   # or --name, --disable, --enable
+python -m app.cli list-schools
+```
+
+## Tests
 
 ```sh
 python -m unittest discover -s tests

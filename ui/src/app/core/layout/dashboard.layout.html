@@ -30,28 +30,27 @@
       </button>
     </div>
 
-    <!-- Current curriculum -->
-    @if (curriculum(); as c) {
-      <a
-        routerLink="/curricula"
-        class="group mx-4 mt-1 flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5 transition hover:border-brand/30 hover:bg-slate-50"
-        title="Change curriculum"
+    <!-- Current school -->
+    <button
+      type="button"
+      class="group mx-4 mt-2 flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5 text-left transition hover:border-brand/30 hover:bg-slate-50"
+      title="Change school"
+      aria-haspopup="dialog"
+      (click)="changeSchool()"
+    >
+      <span
+        class="grid size-9 shrink-0 place-items-center rounded-full bg-brand/[0.08] text-brand"
+        aria-hidden="true"
       >
-        <span
-          class="grid size-9 shrink-0 place-items-center rounded-full font-semibold text-white"
-          [class]="c.mark.class"
-          style="font-size: 0.7rem"
-          aria-hidden="true"
-          >{{ c.mark.text }}</span
-        >
-        <span class="min-w-0 flex-1 leading-tight">
-          <span class="block truncate text-sm font-semibold">{{ c.name }}</span>
-          <span class="block truncate text-xs text-slate-500">{{ c.programmes }}</span>
-        </span>
-        <app-icon name="chevron-up-down" class="size-4 text-slate-400 group-hover:text-slate-600" />
-        <span class="sr-only">Change curriculum</span>
-      </a>
-    }
+        <app-icon [name]="school().all ? 'all-schools' : 'school'" class="size-[1.1rem]" />
+      </span>
+      <span class="min-w-0 flex-1 leading-tight">
+        <span class="block truncate text-sm font-semibold">{{ school().name }}</span>
+        <span class="block truncate text-xs text-slate-500">{{ school().detail }}</span>
+      </span>
+      <app-icon name="chevron-up-down" class="size-4 text-slate-400 group-hover:text-slate-600" />
+      <span class="sr-only">Change school</span>
+    </button>
 
     <nav class="mt-6 flex-1 overflow-y-auto px-3">
       @for (section of navSections; track section.title) {
@@ -96,6 +95,15 @@
             <app-icon name="switch" class="size-4 text-slate-400" />
             Change curriculum
           </a>
+          <button
+            type="button"
+            role="menuitem"
+            class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+            (click)="changeSchool()"
+          >
+            <app-icon name="school" class="size-4 text-slate-400" />
+            Change school
+          </button>
           <button
             type="button"
             role="menuitem"
@@ -152,6 +160,14 @@
           <li class="truncate text-slate-500">
             <a routerLink="/curricula" class="hover:text-slate-800">{{ curriculum()?.name }}</a>
           </li>
+          <li aria-hidden="true">
+            <app-icon name="chevron-right" class="size-3.5 text-slate-400" />
+          </li>
+          <li class="truncate text-slate-500">
+            <button type="button" class="hover:text-slate-800" (click)="changeSchool()">
+              {{ school().name }}
+            </button>
+          </li>
           @if (pageLabel()) {
             <li aria-hidden="true">
               <app-icon name="chevron-right" class="size-3.5 text-slate-400" />
@@ -169,3 +185,5 @@
     </main>
   </div>
 </div>
+
+<app-school-picker />
