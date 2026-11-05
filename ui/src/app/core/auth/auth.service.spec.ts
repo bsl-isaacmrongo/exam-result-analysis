@@ -22,7 +22,9 @@ describe('AuthService', () => {
 
   it('treats 401 from /me as signed out and caches the result', async () => {
     const first = service.ensureSession();
-    http.expectOne('http://localhost:8000/api/auth/me').flush({ detail: 'x' }, { status: 401, statusText: 'Unauthorized' });
+    http
+      .expectOne('http://localhost:8000/api/auth/me')
+      .flush({ detail: 'x' }, { status: 401, statusText: 'Unauthorized' });
     expect(await first).toBeNull();
     expect(await service.ensureSession()).toBeNull();
     http.expectNone('http://localhost:8000/api/auth/me');
@@ -52,8 +54,7 @@ describe('AuthService', () => {
 });
 
 describe('authErrorMessage', () => {
-  const err = (status: number, error: unknown = null) =>
-    new HttpErrorResponse({ status, error });
+  const err = (status: number, error: unknown = null) => new HttpErrorResponse({ status, error });
 
   it('shows server detail for auth failures', () => {
     expect(authErrorMessage(err(401, { detail: 'Invalid email or password' }))).toBe(

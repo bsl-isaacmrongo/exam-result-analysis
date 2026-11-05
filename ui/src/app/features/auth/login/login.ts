@@ -26,6 +26,7 @@ type LoginMode = 'google' | 'password';
   imports: [ReactiveFormsModule],
   templateUrl: './login.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'flex flex-1 flex-col' },
 })
 export class Login {
   private readonly auth = inject(AuthService);
@@ -43,8 +44,7 @@ export class Login {
   protected readonly showForgotHint = signal(false);
   /** Google is the default; email + password is the fallback. */
   protected readonly mode = signal<LoginMode>('google');
-  protected readonly sessionExpired =
-    this.route.snapshot.queryParamMap.get('reason') === 'expired';
+  protected readonly sessionExpired = this.route.snapshot.queryParamMap.get('reason') === 'expired';
 
   private readonly returnUrl = safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
   protected readonly googleLoginUrl = this.auth.googleLoginUrl(this.returnUrl);
@@ -102,7 +102,6 @@ export class Login {
     const c = this.form.controls[control];
     return c.invalid && (c.touched || c.dirty);
   }
-
 
   private redirectAfterLogin(): Promise<boolean> {
     return this.router.navigateByUrl(this.returnUrl, { replaceUrl: true });

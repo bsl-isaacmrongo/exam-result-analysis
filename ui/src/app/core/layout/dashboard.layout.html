@@ -1,0 +1,171 @@
+<div class="min-h-dvh bg-slate-100 text-slate-900">
+  <!-- Mobile backdrop -->
+  @if (sidebarOpen()) {
+    <div
+      class="fixed inset-0 z-30 bg-slate-900/40 lg:hidden"
+      aria-hidden="true"
+      (click)="sidebarOpen.set(false)"
+    ></div>
+  }
+
+  <!-- Sidebar -->
+  <aside
+    id="dashboard-sidebar"
+    class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0"
+    [class.translate-x-0]="sidebarOpen()"
+    aria-label="Main navigation"
+  >
+    <div class="flex h-16 items-center justify-between gap-3 px-5">
+      <a routerLink="overview" class="flex items-center gap-2.5">
+        <img src="images/logo-sm.png" alt="" class="h-8 w-auto" />
+        <span class="font-display text-lg font-semibold text-brand">Braeburn</span>
+      </a>
+      <button
+        type="button"
+        class="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 lg:hidden"
+        (click)="sidebarOpen.set(false)"
+        aria-label="Close navigation"
+      >
+        <app-icon name="close" class="size-5" />
+      </button>
+    </div>
+
+    <!-- Current curriculum -->
+    @if (curriculum(); as c) {
+      <a
+        routerLink="/curricula"
+        class="group mx-4 mt-1 flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5 transition hover:border-brand/30 hover:bg-slate-50"
+        title="Change curriculum"
+      >
+        <span
+          class="grid size-9 shrink-0 place-items-center rounded-full font-semibold text-white"
+          [class]="c.mark.class"
+          style="font-size: 0.7rem"
+          aria-hidden="true"
+          >{{ c.mark.text }}</span
+        >
+        <span class="min-w-0 flex-1 leading-tight">
+          <span class="block truncate text-sm font-semibold">{{ c.name }}</span>
+          <span class="block truncate text-xs text-slate-500">{{ c.programmes }}</span>
+        </span>
+        <app-icon name="chevron-up-down" class="size-4 text-slate-400 group-hover:text-slate-600" />
+        <span class="sr-only">Change curriculum</span>
+      </a>
+    }
+
+    <nav class="mt-6 flex-1 overflow-y-auto px-3">
+      @for (section of navSections; track section.title) {
+        <p class="px-3 text-[0.68rem] font-semibold tracking-wider text-slate-400 uppercase">
+          {{ section.title }}
+        </p>
+        <ul class="mt-2 mb-6 space-y-0.5">
+          @for (item of section.items; track item.path) {
+            <li>
+              <a
+                [routerLink]="item.path"
+                routerLinkActive="bg-brand/[0.06] text-brand font-semibold"
+                #rla="routerLinkActive"
+                [attr.aria-current]="rla.isActive ? 'page' : null"
+                class="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                <app-icon [name]="item.icon" class="size-[1.1rem]" />
+                {{ item.label }}
+                @if (rla.isActive) {
+                  <span class="ml-auto size-1.5 rounded-full bg-brand" aria-hidden="true"></span>
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </nav>
+
+    <!-- User -->
+    <div #userMenu class="relative border-t border-slate-200 p-3">
+      @if (userMenuOpen()) {
+        <div
+          id="user-menu"
+          class="absolute right-3 bottom-full left-3 mb-2 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+          role="menu"
+        >
+          <a
+            routerLink="/curricula"
+            role="menuitem"
+            class="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          >
+            <app-icon name="switch" class="size-4 text-slate-400" />
+            Change curriculum
+          </a>
+          <button
+            type="button"
+            role="menuitem"
+            class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            [disabled]="signOutAction.signingOut()"
+            (click)="signOutAction.signOut()"
+          >
+            <app-icon name="sign-out" class="size-4 text-slate-400" />
+            {{ signOutAction.signingOut() ? 'Signing out…' : 'Sign out' }}
+          </button>
+        </div>
+      }
+      <button
+        type="button"
+        class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-100"
+        (click)="userMenuOpen.set(!userMenuOpen())"
+        [attr.aria-expanded]="userMenuOpen()"
+        aria-haspopup="menu"
+        aria-controls="user-menu"
+      >
+        <span
+          class="grid size-9 shrink-0 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700"
+          aria-hidden="true"
+          >{{ initials() }}</span
+        >
+        <span class="min-w-0 flex-1 leading-tight">
+          <span class="block truncate text-sm font-medium">{{ userName() }}</span>
+          <span class="block truncate text-xs text-slate-500 capitalize">{{ role() }}</span>
+        </span>
+        <app-icon name="chevron-up-down" class="size-4 text-slate-400" />
+        <span class="sr-only">Account menu</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main column -->
+  <div class="flex min-h-dvh flex-col lg:pl-64">
+    <header
+      class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-8"
+    >
+      <button
+        type="button"
+        class="-ml-1 rounded-md p-1.5 text-slate-600 hover:bg-slate-100 lg:hidden"
+        (click)="sidebarOpen.set(true)"
+        [attr.aria-expanded]="sidebarOpen()"
+        aria-controls="dashboard-sidebar"
+        aria-label="Open navigation"
+      >
+        <app-icon name="menu" class="size-5" />
+      </button>
+
+      <nav aria-label="Breadcrumb" class="min-w-0 flex-1">
+        <ol class="flex items-center gap-2 text-sm">
+          <li class="truncate text-slate-500">
+            <a routerLink="/curricula" class="hover:text-slate-800">{{ curriculum()?.name }}</a>
+          </li>
+          @if (pageLabel()) {
+            <li aria-hidden="true">
+              <app-icon name="chevron-right" class="size-3.5 text-slate-400" />
+            </li>
+            <li class="truncate font-medium text-slate-900" aria-current="page">
+              {{ pageLabel() }}
+            </li>
+          }
+        </ol>
+      </nav>
+    </header>
+
+    <main class="flex-1 px-4 py-8 sm:px-8">
+      <router-outlet />
+    </main>
+  </div>
+</div>
