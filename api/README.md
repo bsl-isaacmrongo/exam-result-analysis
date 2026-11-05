@@ -1,12 +1,14 @@
 # API database setup
 
-The API uses PostgreSQL through SQLAlchemy. To start a local database with Docker
-Compose:
+The API uses PostgreSQL through SQLAlchemy. The quickest way to run everything
+(database, migrations, API and UI) is the root `docker-compose.yaml`; see the
+[root README](../README.md). To run the API on the host instead:
 
 1. Copy `.env.example` to `.env`.
 2. Change `POSTGRES_PASSWORD` and use the same password in `DATABASE_URL`.
    URL-encode special characters in the URL password.
-3. Start the database and install the API dependencies:
+3. From the repository root, start only the database, then install the API
+   dependencies from the `api` directory:
 
    ```sh
    docker compose up -d db
@@ -22,7 +24,8 @@ Compose:
    ```
 
 The connection URL is loaded from `DATABASE_URL` in `.env`; credentials should
-not be committed. The database health endpoint executes `SELECT 1` and reports
+not be committed. Optional `DATABASE_HOST` / `DATABASE_PORT` override the host
+and port in that URL (Docker Compose sets `DATABASE_HOST=db`). The database health endpoint executes `SELECT 1` and reports
 connection errors as request failures.
 
 ## Authentication

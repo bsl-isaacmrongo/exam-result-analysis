@@ -19,7 +19,6 @@ import {
 } from '../../../core/auth/auth.service';
 import { safeReturnUrl } from '../../../core/auth/return-url';
 
-type GoogleState = 'loading' | 'ready' | 'unavailable' | 'disabled';
 type LoginMode = 'google' | 'password';
 
 @Component({
@@ -40,7 +39,6 @@ export class Login {
   protected readonly error = signal<string | null>(
     googleSsoErrorMessage(this.route.snapshot.queryParamMap.get('error')),
   );
-  protected readonly googleState = signal<GoogleState>('loading');
   protected readonly showPassword = signal(false);
   protected readonly showForgotHint = signal(false);
   /** Google is the default; email + password is the fallback. */
@@ -55,10 +53,6 @@ export class Login {
     email: ['', [Validators.required, Validators.email, Validators.maxLength(320)]],
     password: ['', [Validators.required, Validators.maxLength(256)]],
   });
-
-  constructor() {
-    afterNextRender(() => void this.loadOptions());
-  }
 
   /** Full-page navigation to the API, which redirects to Google. */
   protected startGoogle(event: MouseEvent): void {
@@ -109,19 +103,6 @@ export class Login {
     return c.invalid && (c.touched || c.dirty);
   }
 
-  private async loadOptions(): Promise<void> {
-    try {
-      const options = await this.auth.getOptions();
-      if (options.google_enabled) {
-        this.googleState.set('ready');
-        return;
-      }
-      this.googleState.set('disabled');
-    } catch {
-      this.googleState.set('unavailable');
-    }
-    this.mode.set('password');
-  }
 
   private redirectAfterLogin(): Promise<boolean> {
     return this.router.navigateByUrl(this.returnUrl, { replaceUrl: true });

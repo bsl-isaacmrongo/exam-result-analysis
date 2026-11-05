@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
@@ -12,6 +13,10 @@ class Settings(BaseSettings):
     )
 
     database_url: str
+    # Optional overrides for the host/port in DATABASE_URL, e.g. DATABASE_HOST=db
+    # inside Docker Compose, so the same .env works on the host and in containers.
+    database_host: str | None = None
+    database_port: int | None = None
 
     # Browser origins allowed to call the API with credentials (the UI).
     # Comma-separated, exact scheme://host:port, no trailing slash.
@@ -41,6 +46,21 @@ class Settings(BaseSettings):
     # Password brute-force protection (per account)
     login_max_attempts: int = Field(default=5, gt=0)
     login_lockout_minutes: int = Field(default=15, gt=0)
+
+    @model_validator(mode="after")
+    def _apply_database_overrides(self) -> "Settings":
+        overrides = {
+            key: value
+            for key, value in (
+                ("host", self.database_host),
+                ("port", self.database_port),
+            )
+            if value
+        }
+        if overrides:
+            url = make_url(self.database_url).set(**overrides)
+            self.database_url = url.render_as_string(hide_password=False)
+        return self
 
     @property
     def google_sso_enabled(self) -> bool:

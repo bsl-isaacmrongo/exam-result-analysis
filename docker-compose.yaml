@@ -1,0 +1,82 @@
+# Local development stack: Postgres -> migrations -> API (hot reload) + UI (ng serve).
+#
+#   docker compose up --build
+#
+# UI:  http://localhost:4200
+# API: http://localhost:8000  (docs at /docs)
+#
+# All settings, including the Postgres credentials, come from api/.env
+# (copy api/.env.example).
+
+x-api: &api
+  build: ./api
+  image: bsl-results-api:dev
+  env_file: ./api/.env
+  environment:
+    # api/.env points DATABASE_URL at 127.0.0.1 for host runs; reach the db service instead.
+    DATABASE_HOST: db
+    DATABASE_PORT: "5432"
+  volumes:
+    - ./api:/app
+
+services:
+  db:
+    image: postgres:16
+    env_file: ./api/.env
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    <<: *api
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *api
+    command:
+      ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "app"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/db')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.dev
+    image: bsl-results-ui:dev
+    ports:
+      - "127.0.0.1:4200:4200"
+    # Source and config are mounted for live reload; node_modules stays in the
+    # image (rebuild with --build after changing package.json).
+    volumes:
+      - ./ui/src:/app/src:ro
+      - ./ui/public:/app/public:ro
+      - ./ui/angular.json:/app/angular.json:ro
+      - ./ui/tsconfig.json:/app/tsconfig.json:ro
+      - ./ui/tsconfig.app.json:/app/tsconfig.app.json:ro
+      - ./ui/.postcssrc.json:/app/.postcssrc.json:ro
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    # Reuses the database volume created by the former api/compose.yaml.
+    name: api_postgres_data
