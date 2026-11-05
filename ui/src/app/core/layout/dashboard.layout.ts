@@ -32,6 +32,7 @@ interface NavItem {
   path: string;
   label: string;
   icon: IconName;
+  children?: readonly NavItem[];
 }
 
 const NAV_SECTIONS: readonly { title: string; items: readonly NavItem[] }[] = [
@@ -49,7 +50,12 @@ const NAV_SECTIONS: readonly { title: string; items: readonly NavItem[] }[] = [
     title: 'Manage',
     items: [
       { path: 'imports', label: 'Data imports', icon: 'imports' },
-      { path: 'settings', label: 'Settings', icon: 'settings' },
+      {
+        path: 'settings',
+        label: 'Settings',
+        icon: 'settings',
+        children: [{ path: 'schools', label: 'Schools', icon: 'school' }],
+      },
     ],
   },
 ];
@@ -76,6 +82,12 @@ export class DashboardLayout {
   protected readonly navSections = NAV_SECTIONS;
   protected readonly sidebarOpen = signal(false);
   protected readonly userMenuOpen = signal(false);
+  /** Path of the top-level page currently shown, e.g. `settings`. */
+  protected readonly activeSection = signal(this.currentSection());
+  /** Parent menus whose sub-menus are expanded. */
+  protected readonly expandedMenus = signal<ReadonlySet<string>>(
+    new Set(hasChildren(this.activeSection()) ? [this.activeSection()] : []),
+  );
   protected readonly signOutAction = injectSignOut();
 
   protected readonly curriculum = toSignal(
@@ -125,7 +137,20 @@ export class DashboardLayout {
         filter((e) => e instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => this.closeOverlays());
+      .subscribe(() => {
+        this.closeOverlays();
+        const section = this.currentSection();
+        this.activeSection.set(section);
+        if (hasChildren(section)) this.setMenuExpanded(section, true);
+      });
+  }
+
+  protected isMenuExpanded(path: string): boolean {
+    return this.expandedMenus().has(path);
+  }
+
+  protected toggleMenu(path: string): void {
+    this.setMenuExpanded(path, !this.isMenuExpanded(path));
   }
 
   protected changeSchool(): void {
@@ -156,4 +181,24 @@ export class DashboardLayout {
     }
     return label;
   }
+
+  private currentSection(): string {
+    return this.route.snapshot.firstChild?.routeConfig?.path ?? '';
+  }
+
+  private setMenuExpanded(path: string, expanded: boolean): void {
+    this.expandedMenus.update((menus) => {
+      if (menus.has(path) === expanded) return menus;
+      const next = new Set(menus);
+      if (expanded) next.add(path);
+      else next.delete(path);
+      return next;
+    });
+  }
+}
+
+function hasChildren(path: string): boolean {
+  return NAV_SECTIONS.some((section) =>
+    section.items.some((item) => item.path === path && !!item.children?.length),
+  );
 }

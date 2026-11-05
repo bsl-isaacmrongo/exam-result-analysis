@@ -60,19 +60,64 @@
         <ul class="mt-2 mb-6 space-y-0.5">
           @for (item of section.items; track item.path) {
             <li>
-              <a
-                [routerLink]="item.path"
-                routerLinkActive="bg-brand/[0.06] text-brand font-semibold"
-                #rla="routerLinkActive"
-                [attr.aria-current]="rla.isActive ? 'page' : null"
-                class="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-              >
-                <app-icon [name]="item.icon" class="size-[1.1rem]" />
-                {{ item.label }}
-                @if (rla.isActive) {
-                  <span class="ml-auto size-1.5 rounded-full bg-brand" aria-hidden="true"></span>
-                }
-              </a>
+              @if (item.children; as children) {
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition hover:bg-slate-100 hover:text-slate-900"
+                  [class]="
+                    activeSection() === item.path
+                      ? 'font-semibold text-brand' +
+                        (isMenuExpanded(item.path) ? '' : ' bg-brand/[0.06]')
+                      : 'text-slate-600'
+                  "
+                  [attr.aria-expanded]="isMenuExpanded(item.path)"
+                  [attr.aria-controls]="'submenu-' + item.path"
+                  (click)="toggleMenu(item.path)"
+                >
+                  <app-icon [name]="item.icon" class="size-[1.1rem]" />
+                  <span class="flex-1">{{ item.label }}</span>
+                  <app-icon
+                    name="chevron-down"
+                    class="size-4 text-slate-400 transition-transform duration-200"
+                    [class.rotate-180]="isMenuExpanded(item.path)"
+                  />
+                </button>
+                <ul
+                  [id]="'submenu-' + item.path"
+                  class="mt-1 mb-2 ml-5 space-y-0.5 border-l border-slate-200 pl-3"
+                  [hidden]="!isMenuExpanded(item.path)"
+                >
+                  @for (child of children; track child.path) {
+                    <li>
+                      <a
+                        [routerLink]="[item.path, child.path]"
+                        routerLinkActive="bg-brand/[0.06] text-brand font-semibold"
+                        [routerLinkActiveOptions]="{ exact: true }"
+                        #childRla="routerLinkActive"
+                        [attr.aria-current]="childRla.isActive ? 'page' : null"
+                        class="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                      >
+                        <app-icon [name]="child.icon" class="size-4" />
+                        {{ child.label }}
+                      </a>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <a
+                  [routerLink]="item.path"
+                  routerLinkActive="bg-brand/[0.06] text-brand font-semibold"
+                  #rla="routerLinkActive"
+                  [attr.aria-current]="rla.isActive ? 'page' : null"
+                  class="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                >
+                  <app-icon [name]="item.icon" class="size-[1.1rem]" />
+                  {{ item.label }}
+                  @if (rla.isActive) {
+                    <span class="ml-auto size-1.5 rounded-full bg-brand" aria-hidden="true"></span>
+                  }
+                </a>
+              }
             </li>
           }
         </ul>

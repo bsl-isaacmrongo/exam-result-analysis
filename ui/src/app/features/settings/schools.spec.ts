@@ -4,19 +4,19 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { Settings } from './settings';
+import { Schools } from './schools';
 
 const API = 'http://localhost:8000/api/schools';
 const BGE = { code: 'bge', name: 'Braeburn Garden Estate', curricula: ['ib'], is_active: true };
 
-describe('Settings', () => {
-  let fixture: ComponentFixture<Settings>;
+describe('Schools', () => {
+  let fixture: ComponentFixture<Schools>;
   let http: HttpTestingController;
   let el: HTMLElement;
 
   async function setup(role: string) {
     TestBed.configureTestingModule({
-      imports: [Settings],
+      imports: [Schools],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -27,7 +27,7 @@ describe('Settings', () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    fixture = TestBed.createComponent(Settings);
+    fixture = TestBed.createComponent(Schools);
     el = fixture.nativeElement;
     http.expectOne(`${API}?include_inactive=true`).flush([BGE]);
     await fixture.whenStable();

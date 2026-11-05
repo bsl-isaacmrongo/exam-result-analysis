@@ -2,6 +2,16 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.7.
 
+## School settings
+
+In the dashboard sidebar, click **Settings** to expand its sub-menu, then open **Schools** to view
+schools across all curricula.
+Administrators can use **Add school** to enter a name, unique code, and curricula offered.
+Other users can view the list but cannot add schools.
+
+The page is available at `/:curriculum/:school/settings/schools`; existing
+`/:curriculum/:school/settings` links redirect there.
+
 ## Development server
 
 To start a local development server, run:

@@ -59,9 +59,16 @@ export const routes: Routes = [
           comingSoon('imports', 'Data imports'),
           {
             path: 'settings',
-            title: 'Settings · Results Analysis',
             data: { label: 'Settings' },
-            loadComponent: () => import('./features/settings/settings').then((m) => m.Settings),
+            children: [
+              { path: '', pathMatch: 'full', redirectTo: 'schools' },
+              {
+                path: 'schools',
+                title: 'Schools · Results Analysis',
+                data: { label: 'Schools' },
+                loadComponent: () => import('./features/settings/schools').then((m) => m.Schools),
+              },
+            ],
           },
         ],
       },

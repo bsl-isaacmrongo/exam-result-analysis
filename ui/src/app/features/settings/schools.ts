@@ -34,14 +34,14 @@ function atLeastOne(control: AbstractControl<Record<string, boolean>>): Validati
   return Object.values(control.value).some(Boolean) ? null : { required: true };
 }
 
-/** App settings. Schools: everyone can view; admins can add. */
+/** School settings: everyone can view; admins can add. */
 @Component({
-  selector: 'app-settings',
+  selector: 'app-schools',
   imports: [ReactiveFormsModule, Icon],
-  templateUrl: './settings.html',
+  templateUrl: './schools.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Settings {
+export class Schools {
   private readonly auth = inject(AuthService);
   private readonly schoolService = inject(SchoolService);
   private readonly injector = inject(Injector);
