@@ -5,6 +5,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 
 import { routes } from './app.routes';
 import { AuthService } from './core/auth/auth.service';
+import { ResultsService } from './core/results/results.service';
 import { SchoolService } from './core/school/school.service';
 
 const SCHOOL = { code: 'bge', name: 'Braeburn Garden Estate', curricula: ['ib'], is_active: true };
@@ -34,6 +35,18 @@ describe('School settings navigation', () => {
             cached: vi.fn().mockReturnValue([SCHOOL]),
             forCurriculum: vi.fn().mockResolvedValue([SCHOOL]),
             listAll: vi.fn().mockResolvedValue([SCHOOL]),
+          },
+        },
+        {
+          provide: ResultsService,
+          useValue: {
+            analysis: vi.fn().mockResolvedValue({
+              school: 'bge',
+              sessions: [],
+              session: null,
+              sources: { cem: [], ib_results: [] },
+              analysis: null,
+            }),
           },
         },
       ],

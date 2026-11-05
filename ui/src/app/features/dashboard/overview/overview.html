@@ -3,339 +3,405 @@
   <div class="flex flex-wrap items-end justify-between gap-4">
     <div>
       <p class="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
-        {{ session }} session · Diploma Programme
+        @if (sessionLabel()) {
+          {{ sessionLabel() }} session ·
+        }
+        {{ pathwayNames[pathway()] }}
       </p>
       <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
         Results overview
       </h1>
     </div>
-    <span
-      class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800"
-      title="Figures are placeholders until results analysis endpoints are connected."
-    >
-      <app-icon name="warning" class="size-3.5" />
-      Sample data
-    </span>
+    @if (analysis()) {
+      <app-analysis-toolbar
+        [sessions]="state.sessions()"
+        [session]="state.session()"
+        [pathway]="pathway()"
+        (sessionChange)="state.setSession($event)"
+        (pathwayChange)="state.setPathway($event)"
+      />
+    }
   </div>
 
-  <!-- KPI cards -->
-  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Key indicators">
-    @for (kpi of kpis; track kpi.label) {
-      <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="text-sm font-medium text-slate-500">{{ kpi.label }}</h2>
-        <p class="mt-2 flex items-baseline gap-1.5">
-          <span class="text-3xl font-bold tracking-tight text-slate-900">{{ kpi.value }}</span>
-          @if (kpi.suffix) {
-            <span class="text-sm text-slate-400">{{ kpi.suffix }}</span>
-          }
-        </p>
-        <p class="mt-2 flex items-center gap-1.5 text-xs">
-          <span
-            class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold"
-            [class]="kpi.positive ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
-          >
-            <app-icon [name]="kpi.positive ? 'trend-up' : 'trend-down'" class="size-3" />
-            {{ kpi.positive ? '+' : '−' }}{{ kpi.change }}
-          </span>
-          <span class="text-slate-500">{{ kpi.comparison }}</span>
-        </p>
-        <p class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">{{ kpi.note }}</p>
-      </article>
-    }
-  </section>
-
-  <!-- Charts -->
-  <section class="grid gap-4 xl:grid-cols-5">
-    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-3">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 class="text-base font-semibold text-slate-900">Stronger outcomes, year on year</h2>
-          <p class="mt-0.5 text-sm text-slate-500">Average diploma score vs global reference</p>
-        </div>
-        <ul class="flex gap-4 text-xs text-slate-600">
-          <li class="flex items-center gap-1.5">
-            <span class="h-0.5 w-4 rounded bg-brand"></span>Braeburn
-          </li>
-          <li class="flex items-center gap-1.5">
-            <span class="h-0.5 w-4 rounded border-t-2 border-dashed border-slate-400"></span>Global
-          </li>
-        </ul>
-      </div>
-
-      <svg
-        [attr.viewBox]="'0 0 ' + line.width + ' ' + line.height"
-        class="mt-4 h-auto w-full"
-        role="img"
-        aria-label="Line chart of average diploma score from 2021 to 2025 for Braeburn and the global reference"
-      >
-        @for (tick of lineTicks; track tick) {
-          <line
-            [attr.x1]="line.left"
-            [attr.x2]="line.width - line.right"
-            [attr.y1]="lineY(tick)"
-            [attr.y2]="lineY(tick)"
-            class="stroke-slate-100"
-          />
-          <text
-            [attr.x]="line.left - 8"
-            [attr.y]="lineY(tick) + 4"
-            text-anchor="end"
-            class="fill-slate-400 text-[11px]"
-          >
-            {{ tick }}
-          </text>
-        }
-        <polyline
-          [attr.points]="globalPath"
-          fill="none"
-          stroke-width="2"
-          stroke-dasharray="5 4"
-          class="stroke-slate-400"
-        />
-        <polyline
-          [attr.points]="schoolPath"
-          fill="none"
-          stroke-width="2.5"
-          stroke-linejoin="round"
-          class="stroke-brand"
-        />
-        @for (p of trend; track p.year; let last = $last) {
-          <circle
-            [attr.cx]="p.x"
-            [attr.cy]="p.globalY"
-            r="3"
-            class="fill-white stroke-slate-400"
-            stroke-width="2"
-          />
-          <circle
-            [attr.cx]="p.x"
-            [attr.cy]="p.schoolY"
-            [attr.r]="last ? 5 : 3.5"
-            class="fill-brand"
-          />
-          @if (last) {
-            <text
-              [attr.x]="p.x"
-              [attr.y]="p.schoolY - 12"
-              text-anchor="middle"
-              class="fill-brand text-[12px] font-semibold"
-            >
-              {{ p.school }}
-            </text>
-          }
-          <text
-            [attr.x]="p.x"
-            [attr.y]="line.height - 6"
-            text-anchor="middle"
-            class="fill-slate-500 text-[11px]"
-          >
-            {{ p.year }}
-          </text>
-        }
-      </svg>
-    </article>
-
-    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 class="text-base font-semibold text-slate-900">Grade distribution</h2>
-          <p class="mt-0.5 text-sm text-slate-500">Share of subject grades, %</p>
-        </div>
-        <ul class="flex gap-4 text-xs text-slate-600">
-          <li class="flex items-center gap-1.5">
-            <span class="size-2.5 rounded-sm bg-brand"></span>Braeburn
-          </li>
-          <li class="flex items-center gap-1.5">
-            <span class="size-2.5 rounded-sm bg-slate-300"></span>Global
-          </li>
-        </ul>
-      </div>
-
-      <svg
-        [attr.viewBox]="'0 0 ' + bars.width + ' ' + bars.height"
-        class="mt-4 h-auto w-full"
-        role="img"
-        aria-label="Bar chart comparing the share of grades 1 to 7 at Braeburn and globally"
-      >
-        @for (tick of barTicks; track tick) {
-          <line
-            [attr.x1]="bars.left"
-            [attr.x2]="bars.width - bars.right"
-            [attr.y1]="barY(tick)"
-            [attr.y2]="barY(tick)"
-            class="stroke-slate-100"
-          />
-          <text
-            [attr.x]="bars.left - 8"
-            [attr.y]="barY(tick) + 4"
-            text-anchor="end"
-            class="fill-slate-400 text-[11px]"
-          >
-            {{ tick }}
-          </text>
-        }
-        @for (g of grades; track g.grade) {
-          <rect
-            [attr.x]="g.schoolX"
-            [attr.y]="g.schoolY"
-            [attr.width]="g.barWidth"
-            [attr.height]="barY(0) - g.schoolY"
-            rx="2"
-            [class]="g.highlight ? 'fill-brand' : 'fill-brand/40'"
-          >
-            <title>Grade {{ g.grade }}: Braeburn {{ g.school }}%</title>
-          </rect>
-          <rect
-            [attr.x]="g.globalX"
-            [attr.y]="g.globalY"
-            [attr.width]="g.barWidth"
-            [attr.height]="barY(0) - g.globalY"
-            rx="2"
-            class="fill-slate-300"
-          >
-            <title>Grade {{ g.grade }}: Global {{ g.global }}%</title>
-          </rect>
-          <text
-            [attr.x]="g.centre"
-            [attr.y]="bars.height - 6"
-            text-anchor="middle"
-            class="fill-slate-500 text-[11px]"
-          >
-            {{ g.grade }}
-          </text>
-        }
-      </svg>
-      <p class="mt-2 text-xs text-slate-500">
-        {{ topGradeShare.school }}% of grades were 6 or 7, against {{ topGradeShare.global }}%
-        globally.
-      </p>
-    </article>
-  </section>
-
-  <!-- Insight -->
-  <section
-    class="flex items-start gap-3 rounded-xl border border-brand/15 bg-brand/5 p-4 text-sm text-slate-700"
-    aria-label="Insight"
-  >
-    <span class="grid size-8 shrink-0 place-items-center rounded-lg bg-brand text-white">
-      <app-icon name="bulb" class="size-4" />
-    </span>
-    <p>
-      The gap to the global average has
-      {{ gapSummary.widened ? 'widened' : 'narrowed' }} from
-      <strong>{{ gapSummary.first | number: '1.1-1' }}</strong> points in
-      {{ gapSummary.fromYear }} to <strong>{{ gapSummary.last | number: '1.1-1' }}</strong> points
-      this session.
-      @if (flagged) {
-        <strong>{{ flagged.name }} {{ flagged.level }}</strong> is the one subject trending down and
-        now sits close to the global average.
-      }
+  @if (state.loading() && !state.response()) {
+    <p class="flex items-center gap-2 py-16 text-sm text-slate-500" role="status">
+      <app-icon name="spinner" class="size-5 animate-spin" />
+      Loading results…
     </p>
-  </section>
-
-  <!-- Subject comparison -->
-  <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+  } @else if (state.error()) {
     <div
-      class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4"
+      class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-700"
+      role="alert"
     >
-      <div>
-        <h2 class="text-base font-semibold text-slate-900">Subject comparison</h2>
-        <p class="mt-0.5 text-sm text-slate-500">Average subject grade vs global, {{ session }}</p>
-      </div>
-      <div
-        class="inline-flex rounded-lg bg-slate-100 p-1 text-xs font-medium"
-        role="group"
-        aria-label="Filter by level"
+      <app-icon name="warning" class="size-5 text-amber-500" />
+      Results couldn't be loaded.
+      <button type="button" class="font-semibold text-brand hover:underline" (click)="state.reload()">
+        Try again
+      </button>
+    </div>
+  } @else if (!analysis()) {
+    <div
+      class="mx-auto mt-6 max-w-lg rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center"
+    >
+      <span
+        class="mx-auto grid size-12 place-items-center rounded-full bg-brand/[0.08] text-brand"
       >
-        @for (l of levels; track l) {
-          <button
-            type="button"
-            class="rounded-md px-3 py-1.5 transition"
-            [class]="
-              level() === l
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            "
-            [attr.aria-pressed]="level() === l"
-            (click)="level.set(l)"
-          >
-            {{ l === 'all' ? 'All levels' : l }}
-          </button>
-        }
+        <app-icon name="spreadsheet" class="size-6" />
+      </span>
+      <h2 class="mt-4 text-lg font-semibold text-slate-900">No IB results yet</h2>
+      <p class="mt-2 text-sm text-slate-500">
+        Import the final IB results and the CEM baseline to see pass rates, subject uptake and
+        value added.
+      </p>
+      <a
+        routerLink="../imports"
+        class="mt-6 inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+      >
+        Go to data imports
+        <app-icon name="arrow-right" class="size-4" />
+      </a>
+    </div>
+  } @else {
+    <!-- Notices -->
+    @if (!hasCem()) {
+      <div
+        class="flex items-start gap-3 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900"
+        role="status"
+      >
+        <app-icon name="info" class="mt-0.5 size-4 shrink-0" />
+        <p>
+          Value added needs CEM predictions.
+          <a routerLink="../imports" class="font-semibold underline">Import the CEM baseline</a>
+          for {{ sessionLabel() }} to compare results with predictions.
+        </p>
       </div>
-    </div>
-
-    <div class="overflow-x-auto">
-      <table class="w-full min-w-[720px] text-left text-sm">
-        <thead class="text-xs font-medium tracking-wide text-slate-500 uppercase">
-          <tr>
-            <th scope="col" class="px-5 py-3">Subject</th>
-            <th scope="col" class="px-3 py-3 text-right">Entries</th>
-            <th scope="col" class="px-3 py-3 text-right">Braeburn</th>
-            <th scope="col" class="px-3 py-3 text-right">Global</th>
-            <th scope="col" class="px-3 py-3 text-right">Gap</th>
-            <th scope="col" class="px-3 py-3 text-right">Grades 6–7</th>
-            <th scope="col" class="px-5 py-3">5-year trend</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          @for (s of subjects(); track s.name + s.level) {
-            <tr class="hover:bg-slate-50">
-              <th scope="row" class="px-5 py-3 font-medium text-slate-900">
-                <span class="flex items-center gap-2">
-                  {{ s.name }}
-                  <span
-                    class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600"
-                    >{{ s.level }}</span
-                  >
-                  @if (s.flagged) {
-                    <span
-                      class="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"
-                      >Watch</span
-                    >
-                  }
-                </span>
-              </th>
-              <td class="px-3 py-3 text-right tabular-nums text-slate-600">{{ s.entries }}</td>
-              <td class="px-3 py-3 text-right font-semibold tabular-nums text-slate-900">
-                {{ s.schoolAvg | number: '1.2-2' }}
-              </td>
-              <td class="px-3 py-3 text-right tabular-nums text-slate-500">
-                {{ s.globalAvg | number: '1.2-2' }}
-              </td>
-              <td
-                class="px-3 py-3 text-right font-medium tabular-nums"
-                [class]="gap(s) >= 0.3 ? 'text-emerald-700' : 'text-amber-700'"
-              >
-                +{{ gap(s) | number: '1.2-2' }}
-              </td>
-              <td class="px-3 py-3 text-right tabular-nums text-slate-600">
-                {{ s.topGrades | number: '1.1-1' }}%
-              </td>
-              <td class="px-5 py-3">
-                <span class="flex items-center gap-2">
-                  <svg viewBox="0 0 72 24" class="h-6 w-18" aria-hidden="true">
-                    <polyline
-                      [attr.points]="sparkline(s.trend)"
-                      fill="none"
-                      stroke-width="1.75"
-                      stroke-linejoin="round"
-                      [class]="yearOnYear(s) >= 0 ? 'stroke-emerald-600' : 'stroke-rose-600'"
-                    />
-                  </svg>
-                  <span
-                    class="text-xs font-medium tabular-nums"
-                    [class]="yearOnYear(s) >= 0 ? 'text-emerald-700' : 'text-rose-700'"
-                  >
-                    {{ yearOnYear(s) >= 0 ? '+' : '−'
-                    }}{{ (yearOnYear(s) < 0 ? -yearOnYear(s) : yearOnYear(s)) | number: '1.2-2' }}
-                  </span>
-                </span>
-              </td>
-            </tr>
+    }
+    @if (matchingIssues(); as m) {
+      <details
+        class="group rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+      >
+        <summary class="flex cursor-pointer list-none items-start gap-3">
+          <app-icon name="alert" class="mt-0.5 size-4 shrink-0" />
+          <span class="flex-1">
+            <strong>{{ m.matched }} students matched to CEM.</strong>
+            @if (m.unmatched_results.length) {
+              {{ m.unmatched_results.length }} without a CEM record (no VA).
+            }
+            @if (m.review.length) {
+              {{ m.review.length }} matched by surname only — please check.
+            }
+            @if (m.unmatched_cem.length) {
+              {{ m.unmatched_cem.length }} CEM records not in the results.
+            }
+          </span>
+          <span class="text-xs font-semibold underline group-open:hidden">Details</span>
+        </summary>
+        <div class="mt-3 grid gap-4 pl-7 text-xs sm:grid-cols-3">
+          @if (m.unmatched_results.length) {
+            <div>
+              <p class="font-semibold">No CEM record</p>
+              <ul class="mt-1 space-y-0.5">
+                @for (name of m.unmatched_results; track name) {
+                  <li>{{ name }}</li>
+                }
+              </ul>
+            </div>
           }
-        </tbody>
-      </table>
-    </div>
-  </section>
+          @if (m.review.length) {
+            <div>
+              <p class="font-semibold">Check these matches</p>
+              <ul class="mt-1 space-y-0.5">
+                @for (r of m.review; track r.name) {
+                  <li>{{ r.name }} → {{ r.cem_name }}</li>
+                }
+              </ul>
+            </div>
+          }
+          @if (m.unmatched_cem.length) {
+            <div>
+              <p class="font-semibold">CEM only</p>
+              <ul class="mt-1 space-y-0.5">
+                @for (name of m.unmatched_cem; track name) {
+                  <li>{{ name }}</li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+      </details>
+    }
+
+    <!-- KPI cards -->
+    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Key indicators">
+      @for (kpi of kpis(); track kpi.label) {
+        <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 class="text-sm font-medium text-slate-500">{{ kpi.label }}</h2>
+          <p class="mt-2 flex items-baseline gap-1.5">
+            <span
+              class="text-3xl font-bold tracking-tight"
+              [class]="
+                kpi.tone === 'positive'
+                  ? 'text-emerald-700'
+                  : kpi.tone === 'negative'
+                    ? 'text-rose-700'
+                    : 'text-slate-900'
+              "
+              >{{ kpi.value }}</span
+            >
+            @if (kpi.suffix) {
+              <span class="text-sm text-slate-400">{{ kpi.suffix }}</span>
+            }
+          </p>
+          <p class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">{{ kpi.note }}</p>
+        </article>
+      }
+    </section>
+
+    <!-- Grade distribution + scatter -->
+    <section class="grid gap-4 xl:grid-cols-5">
+      <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-3">
+        <h2 class="text-base font-semibold text-slate-900">Share of each grade</h2>
+        <p class="mt-0.5 text-sm text-slate-500">
+          Subject grades 7 to 1 by programme, % of all grades
+        </p>
+        <app-chart
+          class="mt-4"
+          [options]="gradeShare()!"
+          label="Bar chart of the share of subject grades 7 to 1 for combined, DP and CP"
+        />
+      </article>
+
+      <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
+        @if (scatters().length) {
+          @for (s of scatters(); track s.pathway; let first = $first) {
+            <div [class.mt-6]="!first">
+              <h2 class="text-base font-semibold text-slate-900">{{ s.title }}</h2>
+              <p class="mt-0.5 text-sm text-slate-500">
+                Each dot is a student
+                @if (s.trend; as t) {
+                  · trend r² {{ t.r2 | number: '1.2-2' }}
+                }
+              </p>
+              <app-chart
+                class="mt-3"
+                [options]="s.options"
+                [height]="scatters().length > 1 ? '9rem' : '20rem'"
+                [label]="s.title"
+              />
+            </div>
+          }
+        } @else {
+          <h2 class="text-base font-semibold text-slate-900">CEM baseline vs results</h2>
+          <p class="mt-6 text-sm text-slate-500">
+            Import the CEM baseline to compare each student's ability score with their IB outcome.
+          </p>
+        }
+      </article>
+    </section>
+
+    @if (genderGap(); as g) {
+      <section
+        class="flex items-start gap-3 rounded-xl border border-brand/15 bg-brand/5 p-4 text-sm text-slate-700"
+        aria-label="Insight"
+      >
+        <span class="grid size-8 shrink-0 place-items-center rounded-lg bg-brand text-white">
+          <app-icon name="bulb" class="size-4" />
+        </span>
+        <p>
+          {{ pathwayNames[pathway()] }}: female students averaged
+          <strong>{{ formatVa(g.female.average_va) }}</strong> value added against
+          <strong>{{ formatVa(g.male.average_va) }}</strong> for male students, a gap of
+          <strong>{{ g.gap | number: '1.2-2' }}</strong> grade points per subject.
+        </p>
+      </section>
+    }
+
+    <!-- Uptake -->
+    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 class="text-base font-semibold text-slate-900">Subject uptake</h2>
+      <p class="mt-0.5 text-sm text-slate-500">
+        % of {{ pathwayNames[pathway()] }} students taking each subject and level
+        ({{ summary()?.candidates }} students)
+      </p>
+      <app-chart
+        class="mt-4"
+        [options]="uptake()!"
+        height="22rem"
+        label="Bar chart of subject uptake by level"
+      />
+    </article>
+
+    <!-- Grade mix -->
+    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 class="text-base font-semibold text-slate-900">Grade distribution by subject</h2>
+      <p class="mt-0.5 text-sm text-slate-500">
+        Share of grades 7 to 1 in each subject and level, {{ pathwayNames[pathway()] }}
+      </p>
+      <app-chart
+        class="mt-4"
+        [options]="gradeMix()!"
+        height="24rem"
+        label="Stacked bar chart of the grade distribution in each subject"
+      />
+    </article>
+
+    <!-- Value added -->
+    @if (hasVa()) {
+      <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="text-base font-semibold text-slate-900">Average value added by subject</h2>
+        <p class="mt-0.5 text-sm text-slate-500">
+          IB grade minus CEM predicted points; dashed lines mark ±{{ threshold() }} (significant)
+        </p>
+        <app-chart
+          class="mt-4"
+          [options]="subjectVa()!"
+          height="24rem"
+          label="Bar chart of average value added by subject and level for DP, CP and combined"
+        />
+      </article>
+
+      <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="text-base font-semibold text-slate-900">Value added by gender</h2>
+        <p class="mt-0.5 text-sm text-slate-500">
+          Average VA for male and female students in each subject, {{ pathwayNames[pathway()] }}
+        </p>
+        <app-chart
+          class="mt-4"
+          [options]="genderVa()!"
+          height="24rem"
+          label="Bar chart of average value added by gender and subject"
+        />
+      </article>
+
+      <section class="grid gap-4 xl:grid-cols-5">
+        <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-3">
+          <h2 class="text-base font-semibold text-slate-900">Value added by subject</h2>
+          <p class="mt-0.5 text-sm text-slate-500">All levels together, by programme</p>
+          <app-chart
+            class="mt-4"
+            [options]="familyVa()!"
+            label="Bar chart of average value added per subject for combined, DP and CP"
+          />
+        </article>
+        <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
+          <h2 class="text-base font-semibold text-slate-900">Value added by ability band</h2>
+          <p class="mt-0.5 text-sm text-slate-500">
+            Average VA grouped by CEM baseline score, {{ pathwayNames[pathway()] }}
+          </p>
+          <app-chart
+            class="mt-4"
+            [options]="bandVa()!"
+            label="Bar chart of average value added by CEM baseline band"
+          />
+        </article>
+      </section>
+    }
+
+    <!-- Subject matrix -->
+    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div
+        class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4"
+      >
+        <div>
+          <h2 class="text-base font-semibold text-slate-900">Subject matrix</h2>
+          <p class="mt-0.5 text-sm text-slate-500">
+            {{ pathwayNames[pathway()] }}, {{ sessionLabel() }}
+          </p>
+        </div>
+        <div
+          class="inline-flex rounded-lg bg-slate-100 p-1 text-xs font-medium"
+          role="group"
+          aria-label="Filter by level"
+        >
+          @for (l of levels; track l) {
+            <button
+              type="button"
+              class="rounded-md px-3 py-1.5 transition"
+              [class]="
+                level() === l
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              "
+              [attr.aria-pressed]="level() === l"
+              (click)="level.set(l)"
+            >
+              {{ l === 'all' ? 'All levels' : l }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[820px] text-left text-sm">
+          <thead class="text-xs font-medium tracking-wide text-slate-500 uppercase">
+            <tr>
+              <th scope="col" class="px-5 py-3">Subject</th>
+              <th scope="col" class="px-3 py-3 text-right">Students</th>
+              <th scope="col" class="px-3 py-3 text-right">Uptake</th>
+              <th scope="col" class="px-3 py-3 text-right">Avg grade</th>
+              <th scope="col" class="px-3 py-3 text-right">Grade 4+</th>
+              <th scope="col" class="px-3 py-3 text-right">Grades 6–7</th>
+              <th scope="col" class="px-3 py-3 text-right">Avg VA</th>
+              <th scope="col" class="px-3 py-3 text-right">VA male</th>
+              <th scope="col" class="px-5 py-3 text-right">VA female</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (m of matrix(); track m.row.key) {
+              <tr class="hover:bg-slate-50">
+                <th scope="row" class="px-5 py-3 font-medium text-slate-900">
+                  <span class="flex items-center gap-2">
+                    {{ m.row.label }}
+                    <span class="truncate text-xs font-normal text-slate-500">{{
+                      m.row.subject_name
+                    }}</span>
+                  </span>
+                </th>
+                <td class="px-3 py-3 text-right text-slate-600 tabular-nums">
+                  {{ m.stats.entries }}
+                </td>
+                <td class="px-3 py-3 text-right text-slate-600 tabular-nums">
+                  {{ m.stats.uptake | number: '1.0-0' }}%
+                </td>
+                <td class="px-3 py-3 text-right font-semibold text-slate-900 tabular-nums">
+                  {{ m.stats.average_grade | number: '1.2-2' }}
+                </td>
+                <td class="px-3 py-3 text-right text-slate-600 tabular-nums">
+                  {{ share(m.row, 4) | number: '1.0-0' }}%
+                </td>
+                <td class="px-3 py-3 text-right text-slate-600 tabular-nums">
+                  {{ share(m.row, 6) | number: '1.0-0' }}%
+                </td>
+                <td
+                  class="px-3 py-3 text-right font-medium tabular-nums"
+                  [class]="vaClass(m.stats.average_va)"
+                >
+                  {{ formatVa(m.stats.average_va) }}
+                </td>
+                <td class="px-3 py-3 text-right tabular-nums" [class]="vaClass(m.stats.male.average_va)">
+                  {{ formatVa(m.stats.male.average_va) }}
+                </td>
+                <td
+                  class="px-5 py-3 text-right tabular-nums"
+                  [class]="vaClass(m.stats.female.average_va)"
+                >
+                  {{ formatVa(m.stats.female.average_va) }}
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="px-5 py-8 text-center text-sm text-slate-500">
+                  No subjects at this level.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
+        VA = IB grade − CEM predicted points. Green and red mark averages of ±{{ threshold() }} or
+        more. Subjects without a CEM prediction (e.g. ESS, Visual Arts, Theatre) have no VA.
+      </p>
+    </section>
+  }
 </div>

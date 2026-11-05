@@ -1,0 +1,294 @@
+<div class="mx-auto max-w-7xl space-y-6">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
+        @if (sessionLabel()) {
+          {{ sessionLabel() }} session ·
+        }
+        {{ pathwayNames[pathway()] }}
+      </p>
+      <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        Student results
+      </h1>
+    </div>
+    @if (analysis()) {
+      <app-analysis-toolbar
+        [sessions]="state.sessions()"
+        [session]="state.session()"
+        [pathway]="pathway()"
+        (sessionChange)="state.setSession($event)"
+        (pathwayChange)="state.setPathway($event)"
+      />
+    }
+  </div>
+
+  @if (state.loading() && !state.response()) {
+    <p class="flex items-center gap-2 py-16 text-sm text-slate-500" role="status">
+      <app-icon name="spinner" class="size-5 animate-spin" />
+      Loading results…
+    </p>
+  } @else if (state.error()) {
+    <div
+      class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-700"
+      role="alert"
+    >
+      <app-icon name="warning" class="size-5 text-amber-500" />
+      Results couldn't be loaded.
+      <button type="button" class="font-semibold text-brand hover:underline" (click)="state.reload()">
+        Try again
+      </button>
+    </div>
+  } @else if (!analysis()) {
+    <div
+      class="mx-auto mt-6 max-w-lg rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center"
+    >
+      <app-icon name="students" class="mx-auto size-7 text-slate-400" />
+      <h2 class="mt-4 text-lg font-semibold text-slate-900">No IB results yet</h2>
+      <p class="mt-2 text-sm text-slate-500">Import the session's IB results to see each student.</p>
+      <a
+        routerLink="../imports"
+        class="mt-6 inline-block text-sm font-semibold text-brand hover:underline"
+        >Go to data imports</a
+      >
+    </div>
+  } @else {
+    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div
+        class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4"
+      >
+        <div class="relative w-full max-w-xs">
+          <app-icon
+            name="search"
+            class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
+          />
+          <label for="student-search" class="sr-only">Search students</label>
+          <input
+            id="student-search"
+            type="search"
+            placeholder="Search by name"
+            autocomplete="off"
+            class="block w-full rounded-md border border-slate-300 bg-white py-2 pr-3 pl-9 text-sm shadow-xs outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+            [value]="query()"
+            (input)="query.set($any($event.target).value)"
+          />
+        </div>
+        <div
+          class="inline-flex rounded-lg bg-slate-100 p-1 text-xs font-medium"
+          role="group"
+          aria-label="Filter by status"
+        >
+          @for (f of filters; track f.value) {
+            <button
+              type="button"
+              class="rounded-md px-3 py-1.5 transition"
+              [class]="
+                status() === f.value
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              "
+              [attr.aria-pressed]="status() === f.value"
+              (click)="status.set(f.value)"
+            >
+              {{ f.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[900px] text-left text-sm">
+          <thead class="text-xs font-medium tracking-wide text-slate-500 uppercase">
+            <tr>
+              <th scope="col" class="px-5 py-3">Student</th>
+              <th scope="col" class="px-3 py-3">Programme</th>
+              <th scope="col" class="px-3 py-3 text-right">CEM</th>
+              <th scope="col" class="px-3 py-3 text-right">Points</th>
+              <th scope="col" class="px-3 py-3 text-center">EE / TOK</th>
+              <th scope="col" class="px-3 py-3 text-right">Avg grade</th>
+              <th scope="col" class="px-3 py-3 text-right">Avg VA</th>
+              <th scope="col" class="px-5 py-3">Award</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (s of students(); track key(s)) {
+              <tr class="cursor-pointer hover:bg-slate-50" (click)="toggle(s)">
+                <th scope="row" class="px-5 py-3 font-medium text-slate-900">
+                  <button
+                    type="button"
+                    class="flex items-center gap-2 text-left"
+                    [attr.aria-expanded]="isExpanded(s)"
+                    (click)="$event.stopPropagation(); toggle(s)"
+                  >
+                    <app-icon
+                      name="chevron-right"
+                      class="size-3.5 text-slate-400 transition-transform"
+                      [class.rotate-90]="isExpanded(s)"
+                    />
+                    {{ s.name }}
+                    @if (needsReview(s)) {
+                      <span
+                        class="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"
+                        [title]="
+                          s.match === 'review'
+                            ? 'Matched to CEM ' + s.cem_name + ' by surname only'
+                            : s.match === null
+                              ? 'No CEM record'
+                              : s.checks.join(' ')
+                        "
+                        >Review</span
+                      >
+                    }
+                  </button>
+                </th>
+                <td class="px-3 py-3 text-slate-600">
+                  {{ s.pathway }}
+                  @if (s.gender) {
+                    <span class="text-slate-400">· {{ s.gender }}</span>
+                  }
+                </td>
+                <td class="px-3 py-3 text-right text-slate-600 tabular-nums">
+                  {{ s.baseline === null ? '–' : (s.baseline | number: '1.0-0') }}
+                </td>
+                <td class="px-3 py-3 text-right font-semibold text-slate-900 tabular-nums">
+                  {{ s.points ?? '–' }}
+                  @if (s.pathway === 'DP' && s.points !== null) {
+                    <span class="text-xs font-normal text-slate-400">/ 45</span>
+                  }
+                </td>
+                <td class="px-3 py-3 text-center text-slate-600">
+                  @if (s.pathway === 'DP') {
+                    {{ s.ee_grade ?? '–' }} / {{ s.tok_grade ?? '–' }}
+                    <span class="text-xs text-slate-400">+{{ s.core_points ?? 0 }}</span>
+                  } @else {
+                    <span class="text-xs text-slate-400">{{ s.btec_result ?? '–' }}</span>
+                  }
+                </td>
+                <td class="px-3 py-3 text-right text-slate-600 tabular-nums">
+                  {{ s.average_grade === null ? '–' : (s.average_grade | number: '1.2-2') }}
+                </td>
+                <td class="px-3 py-3 text-right font-medium tabular-nums" [class]="vaClass(s.average_va)">
+                  {{ formatVa(s.average_va) }}
+                </td>
+                <td class="px-5 py-3">
+                  @if (s.awarded === true) {
+                    <span
+                      class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700"
+                    >
+                      <app-icon name="check" class="size-3" [strokeWidth]="2.5" />
+                      {{ s.pathway === 'DP' ? 'Diploma' : 'Certificate' }}
+                    </span>
+                  } @else if (s.awarded === false) {
+                    <span
+                      class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700"
+                      [title]="failingSummary(s)"
+                    >
+                      Not awarded · {{ failingCodes(s) }}
+                    </span>
+                  } @else {
+                    <span class="text-xs text-slate-400">No DP courses</span>
+                  }
+                </td>
+              </tr>
+              @if (isExpanded(s)) {
+                <tr class="bg-slate-50/70">
+                  <td colspan="8" class="px-5 pt-2 pb-5">
+                    <div class="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                      <table class="w-full text-left text-xs">
+                        <thead class="text-slate-500">
+                          <tr>
+                            <th scope="col" class="py-2 pr-3 font-medium">Subject</th>
+                            <th scope="col" class="px-3 py-2 text-right font-medium">Grade</th>
+                            <th scope="col" class="px-3 py-2 text-right font-medium">CEM prediction</th>
+                            <th scope="col" class="py-2 pl-3 text-right font-medium">VA</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200/70">
+                          @for (sub of s.subjects; track sub.key) {
+                            <tr>
+                              <td class="py-1.5 pr-3 font-medium text-slate-800">{{ sub.label }}</td>
+                              <td class="px-3 py-1.5 text-right font-semibold tabular-nums">{{ sub.grade }}</td>
+                              <td class="px-3 py-1.5 text-right text-slate-600 tabular-nums">
+                                {{ sub.predicted === null ? '–' : (sub.predicted | number: '1.0-2') }}
+                              </td>
+                              <td class="py-1.5 pl-3 text-right font-medium tabular-nums" [class]="vaClass(sub.va)">
+                                {{ formatVa(sub.va) }}
+                              </td>
+                            </tr>
+                          } @empty {
+                            <tr>
+                              <td colspan="4" class="py-2 text-slate-500">No DP course grades.</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+
+                      <dl class="space-y-3 text-xs">
+                        @if (s.failing.length) {
+                          <div>
+                            <dt class="font-semibold text-rose-700">Failing conditions</dt>
+                            @for (f of s.failing; track f.code + f.message) {
+                              <dd class="mt-0.5 text-slate-700">{{ f.code }} · {{ f.message }}</dd>
+                            }
+                          </div>
+                        }
+                        @if (s.unchecked.length && s.awarded !== null) {
+                          <div>
+                            <dt class="font-semibold text-slate-700">Not in imported data</dt>
+                            <dd class="mt-0.5 text-slate-500">{{ s.unchecked.join(', ') }}</dd>
+                          </div>
+                        }
+                        @if (s.pathway === 'DP' && s.ee_subject) {
+                          <div>
+                            <dt class="font-semibold text-slate-700">Extended Essay</dt>
+                            <dd class="mt-0.5 text-slate-500">{{ s.ee_subject }} · grade {{ s.ee_grade ?? '–' }}</dd>
+                          </div>
+                        }
+                        @if (s.cem_name) {
+                          <div>
+                            <dt class="font-semibold text-slate-700">CEM record</dt>
+                            <dd class="mt-0.5 text-slate-500">
+                              {{ s.cem_name }}
+                              @if (s.match === 'review') {
+                                <span class="text-amber-700">(surname match: please check)</span>
+                              }
+                            </dd>
+                          </div>
+                        }
+                        @if (s.other_entries.length) {
+                          <div>
+                            <dt class="font-semibold text-slate-700">Other entries</dt>
+                            <dd class="mt-0.5 text-slate-500">{{ s.other_entries.join(', ') }}</dd>
+                          </div>
+                        }
+                        @for (check of s.checks; track $index) {
+                          <div class="text-amber-800">{{ check }}</div>
+                        }
+                        @if (s.notes) {
+                          <div>
+                            <dt class="font-semibold text-slate-700">Notes</dt>
+                            <dd class="mt-0.5 text-slate-500">{{ s.notes }}</dd>
+                          </div>
+                        }
+                      </dl>
+                    </div>
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr>
+                <td colspan="8" class="px-5 py-8 text-center text-sm text-slate-500">
+                  No students match these filters.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
+        Award status is recalculated from the imported grades with the IB rules (DP: D1–D7;
+        CP: DP courses, Reflective Project and career-related study when supplied).
+        {{ students().length }} of {{ analysis()!.students.length }} students shown.
+      </p>
+    </section>
+  }
+</div>

@@ -1,6 +1,7 @@
 import { provideHttpClient, withInterceptors, withNoXsrfProtection } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withRouterConfig } from '@angular/router';
+import { provideEchartsCore } from 'ngx-echarts';
 
 import { routes } from './app.routes';
 import { apiInterceptor } from './core/api/api.interceptor';
@@ -17,5 +18,7 @@ export const appConfig: ApplicationConfig = {
       withNoXsrfProtection(),
       withInterceptors([apiInterceptor, authInterceptor]),
     ),
+    // ECharts is loaded on first use, keeping it out of the initial bundle.
+    provideEchartsCore({ echarts: () => import('./shared/charts/echarts').then((m) => m.default) }),
   ],
 };

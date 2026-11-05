@@ -54,9 +54,20 @@ export const routes: Routes = [
           },
           comingSoon('subjects', 'Subjects'),
           comingSoon('cohorts', 'Cohorts'),
-          comingSoon('students', 'Student results'),
+          {
+            path: 'students',
+            title: 'Student results · Results Analysis',
+            data: { label: 'Student results' },
+            loadComponent: () =>
+              import('./features/students/student-results').then((m) => m.StudentResults),
+          },
           comingSoon('reports', 'Reports'),
-          comingSoon('imports', 'Data imports'),
+          {
+            path: 'imports',
+            title: 'Data imports · Results Analysis',
+            data: { label: 'Data imports' },
+            loadComponent: () => import('./features/imports/imports').then((m) => m.Imports),
+          },
           {
             path: 'settings',
             data: { label: 'Settings' },
