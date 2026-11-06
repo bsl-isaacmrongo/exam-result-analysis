@@ -129,6 +129,14 @@ python -m app.cli update-school bge --curricula ib,igcse,a-level   # or --name, 
 python -m app.cli list-schools
 ```
 
+## Results imports and analysis
+
+Admins import the CEM baseline and final IB results (`.xlsx`) per school and
+exam session (`POST /api/imports`); `GET /api/analysis/ib` returns award
+status, value added and cohort statistics. File formats, rules and all
+assumptions are documented in
+[docs/Results_Import_and_Analysis.md](../docs/Results_Import_and_Analysis.md).
+
 ## Tests
 
 ```sh
