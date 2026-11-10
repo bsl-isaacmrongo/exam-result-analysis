@@ -360,7 +360,8 @@ export function scatterOption(points: ScatterPoint[], pathway: 'dp' | 'cp', tren
   }
   return {
     ...base(),
-    grid: { left: 8, right: 16, top: 16, bottom: 4, containLabel: true },
+    // Extra bottom space: containLabel reserves room for tick labels only, not the axis name.
+    grid: { left: 8, right: 16, top: 16, bottom: 28, containLabel: true },
     tooltip: {
       ...TOOLTIP,
       trigger: 'item',
@@ -373,10 +374,10 @@ export function scatterOption(points: ScatterPoint[], pathway: 'dp' | 'cp', tren
       type: 'value',
       min: minX,
       max: maxX,
-      name: 'CEM baseline',
+      name: 'CEM baseline score',
       nameLocation: 'middle',
-      nameGap: 26,
-      nameTextStyle: AXIS,
+      nameGap: 28,
+      nameTextStyle: { ...AXIS, fontWeight: 600 },
       axisLabel: AXIS,
       splitLine: SPLIT_LINE,
     },

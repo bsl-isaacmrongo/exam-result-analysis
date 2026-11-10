@@ -19,20 +19,19 @@ import { RouterOutlet } from '@angular/router';
       />
       <div aria-hidden="true" class="absolute inset-0 -z-10 bg-black/70"></div>
 
-      <header class="flex items-center justify-between px-5 py-5 sm:px-8">
+      <!-- <header class="flex items-center justify-between px-5 py-5 sm:px-8">
         <div class="leading-tight text-white">
           <p class="font-display text-xl font-semibold tracking-wide">BRAEBURN</p>
           <p class="text-[0.7rem] tracking-[0.3em] text-brand-accent uppercase">Results Analysis</p>
         </div>
-      </header>
+      </header> -->
 
       <div class="flex flex-1 flex-col">
         <router-outlet />
       </div>
 
       <footer class="pb-6 text-center text-xs text-white/60">
-        Access is limited to provisioned staff accounts. Need access? Contact your system
-        administrator.
+        Access is limited to provisioned staff accounts.
       </footer>
     </main>
   `,
