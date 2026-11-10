@@ -286,7 +286,8 @@ export function bandVaOption(bands: BaselineBand[], pathway: Pathway, threshold:
   return {
     ...base(),
     color: [COLOURS[pathway]],
-    grid: grid(false),
+    // Extra left/bottom space: containLabel reserves room for tick labels only, not the axis names.
+    grid: { ...grid(false), left: 28, bottom: 28 },
     tooltip: {
       ...TOOLTIP,
       trigger: 'axis',
@@ -301,14 +302,20 @@ export function bandVaOption(bands: BaselineBand[], pathway: Pathway, threshold:
     xAxis: {
       type: 'category',
       data: bands.map((b) => b.band),
-      name: 'CEM baseline score',
+      name: 'CEM baseline score band',
       nameLocation: 'middle',
-      nameGap: 26,
-      nameTextStyle: AXIS,
+      nameGap: 28,
+      nameTextStyle: { ...AXIS, fontWeight: 600 },
       axisLabel: AXIS,
       axisLine: { lineStyle: { color: '#cbd5e1' } },
     },
-    yAxis: vaAxis(threshold),
+    yAxis: {
+      ...vaAxis(threshold),
+      name: 'Average value added (grades)',
+      nameLocation: 'middle',
+      nameGap: 34,
+      nameTextStyle: { ...AXIS, fontWeight: 600 },
+    },
     series: [
       {
         type: 'bar',
