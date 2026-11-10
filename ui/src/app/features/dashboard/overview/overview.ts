@@ -33,6 +33,8 @@ export interface Kpi {
   suffix?: string;
   note: string;
   tone?: 'positive' | 'negative' | 'neutral';
+  /** Students behind the figure, listed on demand so they can be celebrated. */
+  roll?: { title: string; students: { name: string; points: number }[] };
 }
 
 function fixed(value: number | null | undefined, digits = 1): string {
@@ -54,6 +56,10 @@ export function buildKpis(analysis: Analysis, pathway: Pathway): Kpi[] {
 
   if (pathway === 'dp' && s.diploma) {
     const d = s.diploma;
+    const topScorers = analysis.students
+      .filter((st) => st.in_cohort && st.pathway === 'DP' && (st.total_points ?? 0) >= 40)
+      .map((st) => ({ name: st.name, points: st.total_points! }))
+      .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
     return [
       {
         label: 'Diploma pass rate',
@@ -69,7 +75,8 @@ export function buildKpis(analysis: Analysis, pathway: Pathway): Kpi[] {
       {
         label: 'Scoring over 35 points',
         value: `${fixed(d.above_35_rate)}%`,
-        note: `${d.above_35} candidates · ${d.above_40} over 40 points (${fixed(d.above_40_rate)}%)`,
+        note: `${d.above_35} candidates · ${d.at_least_40} with 40 points and above (${fixed(d.at_least_40_rate)}%)`,
+        roll: topScorers.length ? { title: '40 points and above', students: topScorers } : undefined,
       },
       va,
     ];
@@ -135,6 +142,12 @@ export class Overview {
 
   protected readonly levels: LevelFilter[] = ['all', 'HL', 'SL'];
   protected readonly level = signal<LevelFilter>('all');
+  /** Label of the KPI card whose student list is expanded. */
+  protected readonly openRoll = signal<string | null>(null);
+
+  protected toggleRoll(label: string): void {
+    this.openRoll.update((open) => (open === label ? null : label));
+  }
 
   protected readonly hasCem = computed(() => !!this.state.response()?.sources.cem.length);
   protected readonly threshold = computed(() => this.analysis()?.va_threshold ?? 1);

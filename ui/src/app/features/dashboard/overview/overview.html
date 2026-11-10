@@ -153,6 +153,27 @@
             }
           </p>
           <p class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">{{ kpi.note }}</p>
+          @if (kpi.roll; as roll) {
+            @let open = openRoll() === kpi.label;
+            <button
+              type="button"
+              class="mt-2 text-xs font-medium text-sky-700 hover:text-sky-900 hover:underline cursor-pointer"
+              [attr.aria-expanded]="open"
+              (click)="toggleRoll(kpi.label)"
+            >
+              {{ open ? 'Hide' : 'Show' }} {{ roll.title }} ({{ roll.students.length }})
+            </button>
+            @if (open) {
+              <ul class="mt-2 space-y-1 rounded-lg bg-amber-50 p-2 text-xs" [attr.aria-label]="roll.title">
+                @for (st of roll.students; track st.name) {
+                  <li class="flex justify-between gap-2">
+                    <span class="font-medium text-slate-800">🎉 {{ st.name }}</span>
+                    <span class="tabular-nums text-slate-600">{{ st.points }} pts</span>
+                  </li>
+                }
+              </ul>
+            }
+          }
         </article>
       }
     </section>

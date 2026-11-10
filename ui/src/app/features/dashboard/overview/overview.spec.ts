@@ -26,6 +26,21 @@ describe('buildKpis', () => {
       ['Average subject VA', '−0.25'],
     ]);
     expect(kpis[0].note).toBe('1 of 2 candidates awarded the Diploma');
+    expect(kpis[2].roll).toBeUndefined();
+  });
+
+  it('lists DP students with 40 points and above, highest first', () => {
+    const analysis = sampleAnalysis();
+    analysis.students[0].total_points = 40;
+    analysis.students[1].total_points = 43;
+    const kpis = buildKpis(analysis, 'dp');
+    expect(kpis[2].roll).toEqual({
+      title: '40 points and above',
+      students: [
+        { name: 'Ben Okoth', points: 43 },
+        { name: 'Ada Lovelace', points: 40 },
+      ],
+    });
   });
 
   it('explains missing VA for the career-related programme', () => {

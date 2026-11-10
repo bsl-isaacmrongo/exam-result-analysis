@@ -64,8 +64,8 @@ export interface PathwaySummary {
     awarded: number;
     rate: number | null;
     average_points_awarded: number | null;
-    above_40: number;
-    above_40_rate: number | null;
+    at_least_40: number;
+    at_least_40_rate: number | null;
     above_35: number;
     above_35_rate: number | null;
   };

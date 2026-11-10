@@ -208,8 +208,8 @@ def _summary(students: list[dict], pathway: str) -> dict:
             "average_points_awarded": _mean(
                 s["total_points"] for s in awarded if s["total_points"] is not None
             ),
-            "above_40": sum(1 for t in totals if t > 40),
-            "above_40_rate": _pct(sum(1 for t in totals if t > 40), len(students)),
+            "at_least_40": sum(1 for t in totals if t >= 40),
+            "at_least_40_rate": _pct(sum(1 for t in totals if t >= 40), len(students)),
             "above_35": sum(1 for t in totals if t > 35),
             "above_35_rate": _pct(sum(1 for t in totals if t > 35), len(students)),
         }

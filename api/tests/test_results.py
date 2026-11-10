@@ -90,7 +90,7 @@ class SampleWorkbookTests(unittest.TestCase):
         dp = self.analysis["summary"]["dp"]
         self.assertEqual(dp["candidates"], 32)
         self.assertEqual(dp["diploma"]["rate"], 93.8)
-        self.assertEqual(dp["diploma"]["above_40_rate"], 9.4)
+        self.assertEqual(dp["diploma"]["at_least_40_rate"], 9.4)
         self.assertEqual(dp["diploma"]["above_35_rate"], 40.6)
         self.assertEqual(dp["diploma"]["average_points_awarded"], 34.3)
         self.assertEqual(dp["average_points"], 33.62)
