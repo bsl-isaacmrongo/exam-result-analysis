@@ -128,6 +128,8 @@ export interface StudentSubject {
   variant: string | null;
   grade: number;
   predicted: number | null;
+  /** Stand-in subject when CEM has no prediction for this one, e.g. ESS → "Bio HL". */
+  predicted_from: string | null;
   va: number | null;
 }
 

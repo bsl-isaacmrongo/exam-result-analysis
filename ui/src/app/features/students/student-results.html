@@ -209,6 +209,13 @@
                               <td class="px-3 py-1.5 text-right font-semibold tabular-nums">{{ sub.grade }}</td>
                               <td class="px-3 py-1.5 text-right text-slate-600 tabular-nums">
                                 {{ sub.predicted === null ? '–' : (sub.predicted | number: '1.0-2') }}
+                                @if (sub.predicted_from) {
+                                  <span
+                                    class="ml-1 text-xs text-amber-700"
+                                    [title]="'No CEM prediction for ' + sub.label + '; using ' + sub.predicted_from"
+                                    >via {{ sub.predicted_from }}</span
+                                  >
+                                }
                               </td>
                               <td class="py-1.5 pl-3 text-right font-medium tabular-nums" [class]="vaClass(sub.va)">
                                 {{ formatVa(sub.va) }}

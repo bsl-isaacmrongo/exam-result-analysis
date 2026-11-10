@@ -166,8 +166,8 @@ export function sampleAnalysis(): Analysis {
         average_grade: 6,
         average_va: 0.5,
         subjects: [
-          { key: 'eng-hl', label: 'Eng HL', subject: 'eng', level: 'HL', variant: null, grade: 6, predicted: 6, va: 0 },
-          { key: 'mat-sl-aa', label: 'Mat SL AA', subject: 'mat', level: 'SL', variant: 'aa', grade: 7, predicted: 5.5, va: 1.5 },
+          { key: 'eng-hl', label: 'Eng HL', subject: 'eng', level: 'HL', variant: null, grade: 6, predicted: 6, predicted_from: null, va: 0 },
+          { key: 'mat-sl-aa', label: 'Mat SL AA', subject: 'mat', level: 'SL', variant: 'aa', grade: 7, predicted: 5.5, predicted_from: null, va: 1.5 },
         ],
         unchecked: ['CAS'],
       }),

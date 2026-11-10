@@ -56,6 +56,13 @@ def _subject_entries(candidate: Any, cem: Any | None) -> tuple[list[dict], list[
             if catalogue.prediction_matches(result.subject, result.variant, p.subject, p.variant)
         ]
         level = result.level or (matching[0].level if matching else None)
+        proxy = None
+        if not matching:
+            for key in catalogue.proxy_subjects(result.subject):
+                matching = [p for p in predictions if p.subject == key]
+                if matching:
+                    proxy = key
+                    break
         prediction = next((p for p in matching if p.level == level), None) or (
             matching[0] if matching else None
         )
@@ -69,6 +76,10 @@ def _subject_entries(candidate: Any, cem: Any | None) -> tuple[list[dict], list[
                 "variant": result.variant,
                 "grade": result.grade,
                 "predicted": predicted,
+                # Label of the stand-in subject when the prediction is a proxy, e.g. "Bio HL".
+                "predicted_from": (
+                    catalogue.label(proxy, prediction.level, prediction.variant) if proxy else None
+                ),
                 "va": round(result.grade - predicted, 2) if predicted is not None else None,
             }
         )

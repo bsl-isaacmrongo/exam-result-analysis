@@ -214,6 +214,7 @@ baseline-band breakdowns.
 | mat | Mat | Mathematics | 5 | AA, AI |
 | art | Art | Visual Arts | 6 | — |
 | dra | Theatre | Theatre | 6 | — |
+| mus | Mus | Music | 6 | — |
 
 Labels follow the school's report, for example `Eng HL`, `Fre Ab`,
 `Mat SL AI` and `Theatre HL`.
@@ -235,10 +236,25 @@ Assumptions:
   sides specify it. A prediction at the **same level** is preferred;
   otherwise the other level's prediction is used (students sometimes change
   level after the baseline).
-- **No prediction, no VA:** subjects without a CEM prediction have no VA. In
-  the sample these are ESS, Kiswahili, Swedish, Visual Arts and Theatre,
-  because CEM doesn't predict them. Proxies (e.g. ESS → Biology) are **not**
-  used.
+- **Proxy predictions:** when CEM has no prediction for the subject itself,
+  another subject's prediction stands in (same level preferred), tried in
+  this order:
+
+  | Subject | Proxies |
+  | --- | --- |
+  | ESS | Biology |
+  | Visual Arts | Theatre, then Music |
+  | Theatre | Music, then Visual Arts |
+  | Music | Theatre, then Visual Arts |
+
+  If Music, Theatre and Visual Arts are all missing, any other subject in the
+  same subject group (group 6) is used. The result's `predicted_from` names
+  the stand-in (e.g. `Bio HL`) and the student view shows "via Bio HL".
+  Rules live in `PROXIES` / `GROUP_FALLBACK` in
+  [subjects.py](../api/app/features/results/subjects.py).
+- **No prediction, no VA:** subjects with neither their own nor a proxy
+  prediction have no VA. In the sample these are Kiswahili, Swedish, Visual
+  Arts and Theatre (CEM has no arts predictions to stand in).
 - **VA averages:** the mean of every subject result that has a VA. Student
   averages, subject averages and the cohort "average subject VA" all use this.
 - **Significance threshold:** ±1.0 (`VA_THRESHOLD`, SRS 3.5). Charts draw it as

@@ -38,6 +38,7 @@ SUBJECTS: tuple[Subject, ...] = (
     Subject("mat", "Mat", "Mathematics", 5, is_maths=True),
     Subject("art", "Art", "Visual Arts", 6),
     Subject("dra", "Theatre", "Theatre", 6),
+    Subject("mus", "Mus", "Music", 6),
 )
 
 BY_KEY = {s.key: s for s in SUBJECTS}
@@ -68,6 +69,8 @@ _RESULT_ABBREVIATIONS = {
     "art": "art",
     "dra": "dra",
     "theatre": "dra",
+    "mus": "mus",
+    "music": "mus",
 }
 
 # Prefixes of CEM subject names (lowercase, after "IB-H-" / "IB-S-").
@@ -93,7 +96,20 @@ _CEM_PREFIXES = (
     ("mathematics", "mat"),
     ("visual arts", "art"),
     ("theatre", "dra"),
+    ("music", "mus"),
 )
+
+# Subjects whose prediction stands in, in order, when CEM has none for the
+# subject itself (CEM doesn't predict ESS or the arts).
+PROXIES: dict[str, tuple[str, ...]] = {
+    "ess": ("bio",),
+    "art": ("dra", "mus"),
+    "dra": ("mus", "art"),
+    "mus": ("dra", "art"),
+}
+# Groups where, once the listed proxies are exhausted, any other subject in
+# the same group can stand in.
+GROUP_FALLBACK = frozenset({6})
 
 _CEM_SUBJECT = re.compile(r"^IB-([HS])-(.+)$", re.IGNORECASE)
 _HEADING = re.compile(r"^([a-z&]+)(?:\s+(hl|sl|ab))?(?:\s+(aa|ai))?$")
@@ -177,3 +193,12 @@ def prediction_matches(
     if subject and subject.is_maths and pred_variant and result_variant:
         return pred_variant == result_variant
     return True
+
+
+def proxy_subjects(key: str) -> tuple[str, ...]:
+    """Subjects whose CEM prediction may stand in for `key`, most preferred first."""
+    proxies = list(PROXIES.get(key, ()))
+    subject = BY_KEY.get(key)
+    if subject and subject.group in GROUP_FALLBACK:
+        proxies += [s.key for s in SUBJECTS if s.group == subject.group and s.key not in (key, *proxies)]
+    return tuple(proxies)

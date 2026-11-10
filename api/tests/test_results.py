@@ -1,6 +1,7 @@
 import io
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 from openpyxl import Workbook
@@ -13,7 +14,8 @@ from app.core.middleware import CSRF_COOKIE, CSRF_HEADER
 from app.core.security import hash_password
 from app.database import get_db
 from app.features.results import rules
-from app.features.results.analysis import analyse
+from app.features.results import subjects as catalogue
+from app.features.results.analysis import _subject_entries, analyse
 from app.features.results.matching import match_students
 from app.features.results.parsers import (
     ParsedCandidate,
@@ -90,7 +92,8 @@ class SampleWorkbookTests(unittest.TestCase):
         dp = self.analysis["summary"]["dp"]
         self.assertEqual(dp["candidates"], 32)
         self.assertEqual(dp["diploma"]["rate"], 93.8)
-        self.assertEqual(dp["diploma"]["at_least_40_rate"], 9.4)
+        # 40 and above: five candidates, two of them on exactly 40.
+        self.assertEqual(dp["diploma"]["at_least_40_rate"], 15.6)
         self.assertEqual(dp["diploma"]["above_35_rate"], 40.6)
         self.assertEqual(dp["diploma"]["average_points_awarded"], 34.3)
         self.assertEqual(dp["average_points"], 33.62)
@@ -125,8 +128,10 @@ class SampleWorkbookTests(unittest.TestCase):
         rahama = {e["label"]: e for e in students["Rahama Abdirahman"]["subjects"]}
         self.assertEqual(rahama["Fre Ab"]["predicted"], 5.0)
         self.assertEqual(rahama["Fre Ab"]["va"], -2.0)
-        # No CEM prediction for ESS, so no VA.
-        self.assertIsNone({e["label"]: e for e in students["Eniss Aruna (Lwanzo)"]["subjects"]}["ESS HL"]["va"])
+        # No CEM prediction for ESS, so the Biology prediction stands in.
+        ess = {e["label"]: e for e in students["Eniss Aruna (Lwanzo)"]["subjects"]}["ESS HL"]
+        self.assertEqual((ess["predicted"], ess["predicted_from"], ess["va"]), (6.0, "Bio HL", -1.0))
+        self.assertIsNone(rahama["Fre Ab"]["predicted_from"])
 
     def test_reports_matching(self) -> None:
         matching = self.analysis["matching"]
@@ -135,6 +140,36 @@ class SampleWorkbookTests(unittest.TestCase):
             matching["review"], [{"name": "Coco Monasch", "cem_name": "Charlotte Chipo Monasch"}]
         )
         self.assertEqual(matching["unmatched_cem"], [])
+
+
+class ProxyPredictionTests(unittest.TestCase):
+    @staticmethod
+    def entry(subject: str, *predictions: tuple[str, str, float]) -> dict:
+        result = SimpleNamespace(subject=subject, level="HL", variant=None, grade=5, raw="5")
+        candidate = SimpleNamespace(subjects=[result])
+        cem = SimpleNamespace(
+            predictions=[SimpleNamespace(subject=k, level=lvl, variant=None, predicted=v) for k, lvl, v in predictions]
+        )
+        return _subject_entries(candidate, cem)[0][0]
+
+    def test_own_prediction_wins_over_proxy(self) -> None:
+        e = self.entry("ess", ("ess", "HL", 4.0), ("bio", "HL", 6.0))
+        self.assertEqual((e["predicted"], e["predicted_from"]), (4.0, None))
+
+    def test_arts_use_listed_alternatives_in_order(self) -> None:
+        self.assertEqual(self.entry("art", ("mus", "SL", 5.0), ("dra", "HL", 4.0))["predicted_from"], "Theatre HL")
+        self.assertEqual(self.entry("art", ("mus", "HL", 5.0))["predicted_from"], "Mus HL")
+        self.assertEqual(self.entry("dra", ("art", "HL", 4.0), ("mus", "SL", 5.0))["predicted_from"], "Mus SL")
+        self.assertEqual(self.entry("dra", ("art", "HL", 4.0))["predicted_from"], "Art HL")
+
+    def test_no_proxy_outside_the_rules(self) -> None:
+        self.assertIsNone(self.entry("art", ("bio", "HL", 5.0))["predicted"])
+        self.assertIsNone(self.entry("his", ("eco", "HL", 5.0))["predicted"])
+
+    def test_group_fallback_covers_the_whole_arts_group(self) -> None:
+        self.assertEqual(catalogue.proxy_subjects("art"), ("dra", "mus"))
+        self.assertEqual(catalogue.proxy_subjects("ess"), ("bio",))
+        self.assertEqual(catalogue.proxy_subjects("bio"), ())
 
 
 class MatchingTests(unittest.TestCase):
