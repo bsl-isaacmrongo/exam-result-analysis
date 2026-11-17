@@ -43,6 +43,36 @@ function fixed(value: number | null | undefined, digits = 1): string {
 
 /** Headline figures for the cohort summary (FR-7.1). */
 export function buildKpis(analysis: Analysis, pathway: Pathway): Kpi[] {
+  return [...headlineKpis(analysis, pathway), cumulativeVaKpi(analysis, pathway)];
+}
+
+/**
+ * Cumulative VA: total VA ÷ distinct subjects (each subject/level counted once), plus
+ * total VA ÷ students who have VA. Students without a CEM match are left out.
+ */
+export function cumulativeVaKpi(analysis: Analysis, pathway: Pathway): Kpi {
+  const students = analysis.students.filter(
+    (st) => st.in_cohort && (pathway === 'combined' || st.pathway === pathway.toUpperCase()),
+  );
+  const vas = students.map((st) => st.subjects.flatMap((e) => (e.va == null ? [] : [e.va])));
+  const total = vas.flat().reduce((a, b) => a + b, 0);
+  const withVa = vas.filter((v) => v.length).length;
+  const subjects = analysis.subjects.filter((row) => row.stats[pathway]?.average_va != null).length;
+  const round = (v: number) => Math.round(v * 100) / 100;
+  const perSubject = subjects ? round(total / subjects) : null;
+  const perStudent = withVa ? round(total / withVa) : null;
+  return {
+    label: 'Cumulative VA',
+    value: formatVa(perSubject),
+    suffix: 'per subject',
+    note: withVa
+      ? `Total ${formatVa(round(total))} over ${subjects} subjects · ${formatVa(perStudent)} per student (${withVa} students)`
+      : 'Import the CEM baseline to see value added',
+    tone: vaTone(perSubject, analysis.va_threshold / 2),
+  };
+}
+
+function headlineKpis(analysis: Analysis, pathway: Pathway): Kpi[] {
   const s = analysis.summary[pathway];
   const va: Kpi = {
     label: 'Average subject VA',
